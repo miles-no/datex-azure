@@ -1,0 +1,72 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.Client", "Vegvesen.Client\Vegvesen.Client.csproj", "{44BAED23-4339-44F9-8420-DB352C201D82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.Client.Tests", "Vegvesen.Client.Tests\Vegvesen.Client.Tests.csproj", "{C9252999-2D0C-4834-9EFB-609B2D038C82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.Client.Console", "Vegvesen.Client.Console\Vegvesen.Client.Console.csproj", "{893C5824-70A5-4984-AA8A-0FAC7C9EC50C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.Storage", "Vegvesen.Storage\Vegvesen.Storage.csproj", "{57EED215-F272-4662-BC0E-817D5A857DB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.Web", "Vegvesen.Web\Vegvesen.Web.csproj", "{A0499598-D708-48E9-9B9F-38012BEFB53A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublishScripts", "PublishScripts", "{EB6F1B7E-F939-48FA-8AE8-7D916CA3001C}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\AzureWebsitePublishModule.psm1 = PublishScripts\AzureWebsitePublishModule.psm1
+		PublishScripts\Publish-WebApplicationWebsite.ps1 = PublishScripts\Publish-WebApplicationWebsite.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configurations", "{B8FEA481-D251-416E-AF84-A2D6AECE73C6}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Configurations\VegvesenWeb-WAWS-dev.json = PublishScripts\Configurations\VegvesenWeb-WAWS-dev.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.WebJob", "Vegvesen.WebJob\Vegvesen.WebJob.csproj", "{FB681170-9CE6-4E6D-8B88-602D63845897}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.Weather", "Vegvesen.Weather\Vegvesen.Weather.fsproj", "{578D2A6E-EEA1-432F-A034-C9B44199BF16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{44BAED23-4339-44F9-8420-DB352C201D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44BAED23-4339-44F9-8420-DB352C201D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44BAED23-4339-44F9-8420-DB352C201D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44BAED23-4339-44F9-8420-DB352C201D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9252999-2D0C-4834-9EFB-609B2D038C82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9252999-2D0C-4834-9EFB-609B2D038C82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9252999-2D0C-4834-9EFB-609B2D038C82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9252999-2D0C-4834-9EFB-609B2D038C82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{893C5824-70A5-4984-AA8A-0FAC7C9EC50C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{893C5824-70A5-4984-AA8A-0FAC7C9EC50C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{893C5824-70A5-4984-AA8A-0FAC7C9EC50C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{893C5824-70A5-4984-AA8A-0FAC7C9EC50C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57EED215-F272-4662-BC0E-817D5A857DB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57EED215-F272-4662-BC0E-817D5A857DB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57EED215-F272-4662-BC0E-817D5A857DB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57EED215-F272-4662-BC0E-817D5A857DB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0499598-D708-48E9-9B9F-38012BEFB53A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0499598-D708-48E9-9B9F-38012BEFB53A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0499598-D708-48E9-9B9F-38012BEFB53A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0499598-D708-48E9-9B9F-38012BEFB53A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB681170-9CE6-4E6D-8B88-602D63845897}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB681170-9CE6-4E6D-8B88-602D63845897}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB681170-9CE6-4E6D-8B88-602D63845897}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB681170-9CE6-4E6D-8B88-602D63845897}.Release|Any CPU.Build.0 = Release|Any CPU
+		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B8FEA481-D251-416E-AF84-A2D6AECE73C6} = {EB6F1B7E-F939-48FA-8AE8-7D916CA3001C}
+	EndGlobalSection
+EndGlobal
