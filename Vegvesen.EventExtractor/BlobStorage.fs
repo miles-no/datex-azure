@@ -2,23 +2,32 @@
 
 open System
 open System.IO
+open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 
 module BlobStorage =
 
+    [<Literal>]
+    let MaxDirLevels = 3
+
     let enumerateDirectories (container : Blob.CloudBlobContainer) (startDir : string) =
-        let listDirs (dir : string) = 
-            container.ListBlobs(dir + (if dir = "" then "" else "/"))
-            |> Seq.filter (fun x -> x :? Blob.CloudBlobDirectory)
-            |> Seq.map (fun x -> (x :?> Blob.CloudBlobDirectory).Prefix)
-            |> Seq.map (fun x -> (x.Substring(0, x.Length-1)))
+
+        let listDirs (dir : string) =
+            match dir.Split('/').Length with
+            | MaxDirLevels -> 
+                Seq.empty
+            | _ -> 
+                container.ListBlobs(dir + (if dir = "" then "" else "/"))
+                |> Seq.filter (fun x -> x :? Blob.CloudBlobDirectory)
+                |> Seq.map (fun x -> (x :?> Blob.CloudBlobDirectory).Prefix)
+                |> Seq.map (fun x -> (x.Substring(0, x.Length-1)))
 
         let rec listDirsRecursive (dirs : string seq) =
             match dirs |> List.ofSeq with
             | [] -> Seq.empty
             | head :: tail ->
                 let dirs = listDirs head
-                           |> Seq.filter (fun x -> x >= startDir.Substring(0, x.Length))
+                           |> Seq.filter (fun x -> x >= startDir.Substring(0, Math.Min(x.Length, startDir.Length)))
                 seq {
                     yield! listDirsRecursive dirs
                     yield! dirs
@@ -32,7 +41,9 @@ module BlobStorage =
             container.ListBlobs(dir + (if dir = "" then "" else "/"))
             |> Seq.filter (fun x -> x :? Blob.CloudBlockBlob)
             |> Seq.map (fun x -> (x :?> Blob.CloudBlockBlob).Name)
+            |> Seq.filter (fun x -> x > startBlob)
 
         let startDir = startBlob.Substring(0, startBlob.LastIndexOf('/'))
         enumerateDirectories container startDir
-        |> Seq.collect (fun x -> listBlobs x |> Seq.filter (fun x -> x > startBlob))
+        |> List.ofSeq
+        |> PSeq.collect (fun x -> listBlobs x)

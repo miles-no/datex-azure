@@ -2,9 +2,11 @@
 
 open System
 open System.IO
+open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 
 open BlobStorage
+open TableStorage
 open XmlParser
 
 module BlobConverter =
@@ -45,25 +47,27 @@ module BlobConverter =
         use stream = blob.OpenRead()
         parseNodes stream elementName idElementName
 
-    let rec extractServiceEvents (blobContainer : Blob.CloudBlobContainer) (lastBlobName : string option) (unprocessedBlobNames : string list) =
-        
-        match unprocessedBlobNames with
-        | [] -> ()
-        | nextBlobName :: restBlobNames ->
-            let nextBlobNodes = extractXmlNodes blobContainer nextBlobName
-            let diffBlobNodes = match lastBlobName with
-            | None ->
-                nextBlobNodes
-            | Some(lastBlobName) ->
-                let lastBlobNodes = extractXmlNodes blobContainer lastBlobName
-                extractDiff lastBlobNodes nextBlobNodes            
-            printfn "Total: %i, diff: %i" (nextBlobNodes |> Seq.length) (diffBlobNodes |> Seq.length)
-            extractServiceEvents blobContainer (Some(nextBlobName)) restBlobNames
+    let extractServiceEvents (blobContainer : Blob.CloudBlobContainer) lastBlobName nextBlobName =
+        printfn "extractServiceEvents: %s" nextBlobName
+        let nextBlobNodes = extractXmlNodes blobContainer nextBlobName
+        match lastBlobName with
+        | "" ->
+            nextBlobNodes
+        | _ ->
+            let lastBlobNodes = extractXmlNodes blobContainer lastBlobName
+            extractDiff lastBlobNodes nextBlobNodes            
 
-    let updateServiceEvents (account : CloudStorageAccount) containerName =
-        
+    let rec getPairwise lst =
+        match lst with
+        | [] -> []
+        | [item] -> []
+        | first :: second :: tail -> (first, second) :: getPairwise (second :: tail)
+
+    let updateServiceEvents (account : CloudStorageAccount) containerName =        
         let blobClient = account.CreateCloudBlobClient()
         let blobContainer = blobClient.GetContainerReference(containerName)
+        let tableClient = account.CreateCloudTableClient()
+
         let lastExtractedBlobName = getLastExtractedBlobName blobContainer
         let lastBlobName = 
             match lastExtractedBlobName with
@@ -71,5 +75,10 @@ module BlobConverter =
                 lastExtractedBlobName
             | None -> "2014/12/31/000000"
 
-        let unprocessedBlobs = enumerateBlobs blobContainer lastBlobName |> Seq.take 100 |> List.ofSeq
-        extractServiceEvents blobContainer lastExtractedBlobName unprocessedBlobs
+        let unprocessedBlobs = enumerateBlobs blobContainer lastBlobName |> Seq.take 5 |> List.ofSeq
+        let blobPairs = ("", List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
+        blobPairs 
+        |> PSeq.map (fun (x, y) -> 
+                    extractServiceEvents blobContainer x y
+                    |> PSeq.iter (fun x -> saveEvent tableClient containerName x DateTime.UtcNow)) 
+        |> List.ofSeq
