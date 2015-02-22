@@ -49,13 +49,13 @@ module BlobConverter =
 
     let extractServiceEvents (blobContainer : Blob.CloudBlobContainer) lastBlobName nextBlobName =
         printfn "extractServiceEvents: %s" nextBlobName
-        let nextBlobNodes = extractXmlNodes blobContainer nextBlobName
+        let (publicationTime, nextBlobNodes) = extractXmlNodes blobContainer nextBlobName
         match lastBlobName with
         | "" ->
-            nextBlobNodes
+            (publicationTime, nextBlobNodes)
         | _ ->
-            let lastBlobNodes = extractXmlNodes blobContainer lastBlobName
-            extractDiff lastBlobNodes nextBlobNodes            
+            let (_, lastBlobNodes) = extractXmlNodes blobContainer lastBlobName
+            (publicationTime, extractDiff lastBlobNodes nextBlobNodes)
 
     let rec getPairwise lst =
         match lst with
@@ -79,6 +79,6 @@ module BlobConverter =
         let blobPairs = ("", List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
         blobPairs 
         |> PSeq.map (fun (x, y) -> 
-                    extractServiceEvents blobContainer x y
-                    |> PSeq.iter (fun x -> saveEvent tableClient containerName x DateTime.UtcNow)) 
+                    let (publicationTime, events) = extractServiceEvents blobContainer x y
+                    events |> PSeq.iter (fun x -> saveEvent tableClient containerName x publicationTime)) 
         |> List.ofSeq

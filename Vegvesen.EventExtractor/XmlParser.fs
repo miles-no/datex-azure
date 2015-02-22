@@ -1,11 +1,17 @@
 namespace Vegvesen.EventExtractor
 
+open System
 open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Xml
 
 module XmlParser =
+
+    [<Literal>]
+    let IdAttributeName = "id"
+    [<Literal>]
+    let PublicationTimeElementName = "publicationTime"
 
     let parseNodes (stream : Stream) (elementName : string) (idElementName : string) =
 
@@ -15,15 +21,19 @@ module XmlParser =
                 if reader.Read() then
                     match reader.NodeType with
                     | XmlNodeType.Element when reader.Name = idElementName -> 
-                        reader.GetAttribute("id")
+                        reader.GetAttribute(IdAttributeName)
                     | _ -> readId reader
                 else
                     failwith "Unable to find id"
 
             match reader.NodeType with
+            | XmlNodeType.Element when reader.Name = PublicationTimeElementName -> 
+                let id = reader.Name
+                let value = reader.Value
+                nodes.Add(id, value)
             | XmlNodeType.Element when reader.Name = elementName -> 
                 if elementName = idElementName then
-                    let id = reader.GetAttribute("id")
+                    let id = reader.GetAttribute(IdAttributeName)
                     let node = reader.ReadOuterXml()
                     nodes.Add(id, node)
                 else
@@ -39,7 +49,9 @@ module XmlParser =
         let nodes = Dictionary<string, string>()
         use xr = new XmlTextReader(stream)
         readNode xr nodes
-        nodes |> Seq.map (|KeyValue|)
+        let publicationTime = DateTime.Parse(nodes.Item(PublicationTimeElementName))
+        nodes.Remove(PublicationTimeElementName) |> ignore
+        (publicationTime, nodes |> Seq.map (|KeyValue|))
 
     let extractDiff xsold xsnew =
 
