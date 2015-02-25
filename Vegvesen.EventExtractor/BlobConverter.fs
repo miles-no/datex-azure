@@ -5,10 +5,7 @@ open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 
-open BlobStorage
-open TableStorage
-open XmlParser
-
+[<AutoOpen>]
 module BlobConverter =
 
     let blobContainers = [|
@@ -37,9 +34,11 @@ module BlobConverter =
         else
             None
 
-    let updateLastExtractedBlobName (blobContainer : Blob.CloudBlobContainer) blobName =
+    let updateLastExtractedBlobName (blobContainer : Blob.CloudBlobContainer) (blobName : string option) =
         let blob = blobContainer.GetBlockBlobReference("LastExtracted")
-        blob.UploadText(blobName)
+        match blobName with
+        | Some blobName -> blob.UploadText(blobName)
+        | None -> blob.DeleteIfExists() |> ignore
 
     let extractXmlNodes (blobContainer : Blob.CloudBlobContainer) blobName =
         let (elementName, idElementName) = getContainerXmlElementNames blobContainer.Name
@@ -67,6 +66,8 @@ module BlobConverter =
         let blobClient = account.CreateCloudBlobClient()
         let blobContainer = blobClient.GetContainerReference(containerName)
         let tableClient = account.CreateCloudTableClient()
+        let table = tableClient.GetTableReference(containerName)
+        table.CreateIfNotExists() |> ignore
 
         let lastExtractedBlobName = getLastExtractedBlobName blobContainer
         let lastBlobName = 
@@ -78,7 +79,8 @@ module BlobConverter =
         let unprocessedBlobs = enumerateBlobs blobContainer lastBlobName |> Seq.take 5 |> List.ofSeq
         let blobPairs = ("", List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
         blobPairs 
-        |> PSeq.map (fun (x, y) -> 
-                    let (publicationTime, events) = extractServiceEvents blobContainer x y
-                    events |> PSeq.iter (fun x -> saveEvent tableClient containerName x publicationTime)) 
-        |> List.ofSeq
+        |> PSeq.map (fun (last, next) -> extractServiceEvents blobContainer last next)
+        |> Seq.iter (fun (publicationTime, events) -> 
+                    (events |> Seq.iter (fun event -> saveEvent table event publicationTime)))
+
+        updateLastExtractedBlobName blobContainer (Some (unprocessedBlobs |> Seq.last))

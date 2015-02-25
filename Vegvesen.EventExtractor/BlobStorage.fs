@@ -5,6 +5,7 @@ open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 
+[<AutoOpen>]
 module BlobStorage =
 
     [<Literal>]
@@ -47,3 +48,5 @@ module BlobStorage =
         enumerateDirectories container startDir
         |> List.ofSeq
         |> PSeq.collect (fun x -> listBlobs x)
+        |> PSeq.toList
+        |> List.sort
