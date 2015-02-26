@@ -32,6 +32,11 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.EventExtractor", "
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.EventExtractor.Tests", "Vegvesen.EventExtractor.Tests\Vegvesen.EventExtractor.Tests.fsproj", "{4CCF0D17-42A6-402C-A62D-83B1E5AA6EB9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{06BEDB1A-F62B-4044-BECD-D8F30704DBDE}"
+	ProjectSection(SolutionItems) = preProject
+		ConnectionStrings.config = ConnectionStrings.config
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

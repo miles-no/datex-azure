@@ -56,6 +56,9 @@
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
+    <Content Include="..\ConnectionStrings.config">
+      <Link>ConnectionStrings.config</Link>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Data.Edm">

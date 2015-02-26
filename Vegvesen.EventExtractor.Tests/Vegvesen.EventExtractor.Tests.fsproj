@@ -52,6 +52,10 @@
     <Compile Include="BlobConverterTests.fs" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
+    <Content Include="..\ConnectionStrings.config">
+      <Link>ConnectionStrings.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsUnit.NUnit">
