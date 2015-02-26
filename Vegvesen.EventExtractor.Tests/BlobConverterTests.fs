@@ -17,16 +17,18 @@ module Tests =
         let account = getStorageAccount
         let containerName = containerName
         let blobClient = account.CreateCloudBlobClient()
-        let blobContainer = blobClient.GetContainerReference(containerName)
+        let rawBlobContainer = blobClient.GetContainerReference(containerName)
         let tableClient = account.CreateCloudTableClient()
         let table = tableClient.GetTableReference(containerName)
         table.CreateIfNotExists() |> ignore
-        (blobContainer, table)
+        let eventBlobContainer = blobClient.GetContainerReference(containerName + "-events")
+        eventBlobContainer.CreateIfNotExists() |> ignore
+        (rawBlobContainer, table, eventBlobContainer)
 
     [<Test>]
     let ``should return five first blobs`` () =
 
-        let (blobContainer, table) = getStorageContainers "getmeasuredweatherdata"
+        let (blobContainer, table, _) = getStorageContainers "getmeasuredweatherdata"
 
         updateLastExtractedBlobName blobContainer None |> ignore
         let blobs = enumerateBlobs blobContainer "2015/01/01/000000" |> Seq.take 5 |> Array.ofSeq
@@ -39,7 +41,7 @@ module Tests =
     [<Test>]
     let ``should extract events from the first blob`` () =
 
-        let (blobContainer, table) = getStorageContainers "getmeasuredweatherdata"
+        let (blobContainer, table, _) = getStorageContainers "getmeasuredweatherdata"
 
         updateLastExtractedBlobName blobContainer None |> ignore
         let blobName = enumerateBlobs blobContainer "2015/01/01/000000" |> Seq.head
@@ -51,35 +53,35 @@ module Tests =
     [<Test>]
     let ``should create events from five first blobs`` () =
 
-        let (blobContainer, table) = getStorageContainers "getmeasuredweatherdata"
+        let (rawBlobContainer, table, eventBlobContainer) = getStorageContainers "getmeasuredweatherdata"
 
-        updateLastExtractedBlobName blobContainer None |> ignore
-        let blobs = enumerateBlobs blobContainer "2015/01/01/000000" |> Seq.take 5 |> List.ofSeq
+        updateLastExtractedBlobName rawBlobContainer None |> ignore
+        let blobs = enumerateBlobs rawBlobContainer "2015/01/01/000000" |> Seq.take 5 |> List.ofSeq
         let blobPairs = ("", List.head blobs) :: (getPairwise blobs)
         blobPairs |> List.length |> should equal 5
         
         blobPairs 
-        |> Seq.map (fun (last, next) -> extractServiceEvents blobContainer last next)
+        |> Seq.map (fun (last, next) -> extractServiceEvents rawBlobContainer last next)
         |> Seq.iter (fun (publicationTime, events) -> 
-                    (events |> Seq.iter (fun event -> saveEvent table event publicationTime)))
+                    (events |> Seq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)))
 
-        updateLastExtractedBlobName blobContainer (Some (blobs |> Seq.last))
+        updateLastExtractedBlobName rawBlobContainer (Some (blobs |> Seq.last))
 
-        let lastBlobName = getLastExtractedBlobName blobContainer
+        let lastBlobName = getLastExtractedBlobName rawBlobContainer
         lastBlobName |> Option.get |> should equal "2015/01/01/003000"
 
     [<Test>]
     let ``should create events from the first large blob`` () =
 
-        let (blobContainer, table) = getStorageContainers "getsituation"
+        let (rawBlobContainer, table, eventBlobContainer) = getStorageContainers "getsituation"
 
-        updateLastExtractedBlobName blobContainer None |> ignore
-        let blobName = enumerateBlobs blobContainer "2015/01/01/000000" |> Seq.head
+        updateLastExtractedBlobName rawBlobContainer None |> ignore
+        let blobName = enumerateBlobs rawBlobContainer "2015/01/01/000000" |> Seq.head
         
-        let (publicationTime, events) = extractServiceEvents blobContainer "" blobName
-        events |> Seq.iter (fun event -> saveEvent table event publicationTime)
+        let (publicationTime, events) = extractServiceEvents rawBlobContainer "" blobName
+        events |> Seq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)
 
-        updateLastExtractedBlobName blobContainer (Some blobName)
+        updateLastExtractedBlobName rawBlobContainer (Some blobName)
 
-        let lastBlobName = getLastExtractedBlobName blobContainer
+        let lastBlobName = getLastExtractedBlobName rawBlobContainer
         lastBlobName |> Option.get |> should equal blobName

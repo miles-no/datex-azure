@@ -64,23 +64,25 @@ module BlobConverter =
 
     let updateServiceEvents (account : CloudStorageAccount) containerName =        
         let blobClient = account.CreateCloudBlobClient()
-        let blobContainer = blobClient.GetContainerReference(containerName)
+        let rawBlobContainer = blobClient.GetContainerReference(containerName)
         let tableClient = account.CreateCloudTableClient()
         let table = tableClient.GetTableReference(containerName)
         table.CreateIfNotExists() |> ignore
+        let eventBlobContainer = blobClient.GetContainerReference(containerName + "-events")
+        eventBlobContainer.CreateIfNotExists() |> ignore
 
-        let lastExtractedBlobName = getLastExtractedBlobName blobContainer
+        let lastExtractedBlobName = getLastExtractedBlobName rawBlobContainer
         let lastBlobName = 
             match lastExtractedBlobName with
             | Some(lastExtractedBlobName) -> 
                 lastExtractedBlobName
             | None -> "2014/12/31/000000"
 
-        let unprocessedBlobs = enumerateBlobs blobContainer lastBlobName |> Seq.take 5 |> List.ofSeq
+        let unprocessedBlobs = enumerateBlobs rawBlobContainer lastBlobName |> Seq.take 5 |> List.ofSeq
         let blobPairs = ("", List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
         blobPairs 
-        |> PSeq.map (fun (last, next) -> extractServiceEvents blobContainer last next)
+        |> PSeq.map (fun (last, next) -> extractServiceEvents rawBlobContainer last next)
         |> Seq.iter (fun (publicationTime, events) -> 
-                    (events |> Seq.iter (fun event -> saveEvent table event publicationTime)))
+                    (events |> Seq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)))
 
-        updateLastExtractedBlobName blobContainer (Some (unprocessedBlobs |> Seq.last))
+        updateLastExtractedBlobName rawBlobContainer (Some (unprocessedBlobs |> Seq.last))
