@@ -19,7 +19,7 @@ module TableStorage =
         let blobName = id + "/" + rowKey
         let blob = blobContainer.GetBlockBlobReference(blobName);
         blob.Properties.ContentType <-"application/xml";
-        blob.UploadText(content)
-        
         let operation = Table.TableOperation.InsertOrReplace(entity)
+
+        blob.UploadText(content)
         table.Execute(operation) |> ignore
