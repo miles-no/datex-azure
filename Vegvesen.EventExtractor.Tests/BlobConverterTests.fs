@@ -39,6 +39,19 @@ module Tests =
         (sourceBlobContainer, table, eventBlobContainer)
 
     [<Test>]
+    let ``should delete event storage`` () =
+
+        let (_, eventAccount) = getStorageAccounts
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let eventBlobClient = eventAccount.CreateCloudBlobClient()
+
+        for containerName in blobContainers do
+            let table = tableClient.GetTableReference(containerName.ToLower())
+            let eventBlobContainer = eventBlobClient.GetContainerReference(containerName.ToLower() + "-events")
+            table.DeleteIfExists() |> ignore
+            eventBlobContainer.DeleteIfExists() |> ignore
+
+    [<Test>]
     let ``should return five first blobs`` () =
 
         let (sourceBlobContainer, table, _) = getStorageContainers "getmeasuredweatherdata" false
@@ -125,11 +138,11 @@ module Tests =
     //[<TestCase("getcctvsitetable")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("gettraveltimedata")>]
-    let ``should update 1000 events`` (containerName) =
+    let ``should update 10 events`` (containerName) =
         let (sourceAccount, eventAccount) = getStorageAccounts
-        updateServiceEvents sourceAccount eventAccount containerName 1
+        updateServiceEvents sourceAccount eventAccount containerName 10
 
     [<TestCase("getsituation")>]
-    let ``should update 100 large blob events`` (containerName) =
+    let ``should update 10 large blob events`` (containerName) =
         let (sourceAccount, eventAccount) = getStorageAccounts
-        updateServiceEvents sourceAccount eventAccount containerName 1
+        updateServiceEvents sourceAccount eventAccount containerName 10

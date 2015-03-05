@@ -72,11 +72,15 @@ module BlobConverter =
         let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
         eventBlobContainer.CreateIfNotExists() |> ignore
 
+        printfn "Extracting events from up to %d blobs, container %s" maxBlobCount containerName
+
         let lastExtractedBlobName = getLastExtractedBlobName eventBlobContainer
         let (startBlobName, lastBlobName) = 
             match lastExtractedBlobName with
             | Some(lastExtractedBlobName) -> (lastExtractedBlobName, lastExtractedBlobName)
             | None -> ("2014/12/01/000000", "")
+
+        printfn "Last processed blob: %s" lastBlobName
 
         let unprocessedBlobs = enumerateBlobs sourceBlobContainer startBlobName |> Seq.truncate maxBlobCount |> List.ofSeq
         match List.isEmpty unprocessedBlobs with
@@ -89,5 +93,7 @@ module BlobConverter =
                         (events |> PSeq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)))
 
             let lastBlobName = unprocessedBlobs |> Seq.last
-            printfn "Last processed blob: %s" lastBlobName
+            printfn "Updated last processed blob: %s" lastBlobName
             updateLastExtractedBlobName eventBlobContainer (Some lastBlobName)
+
+        printfn "Completed extracting events for %s" containerName
