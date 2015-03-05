@@ -61,31 +61,33 @@ module BlobConverter =
         | [item] -> []
         | first :: second :: tail -> (first, second) :: getPairwise (second :: tail)
 
-    let updateServiceEvents (account : CloudStorageAccount) containerName maxBlobCount =        
-        let blobClient = account.CreateCloudBlobClient()
-        let rawBlobContainer = blobClient.GetContainerReference(containerName)
-        let tableClient = account.CreateCloudTableClient()
+    let updateServiceEvents (sourceAccount : CloudStorageAccount) (eventAccount : CloudStorageAccount) containerName maxBlobCount =        
+        let sourceBlobClient = sourceAccount.CreateCloudBlobClient()
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let eventBlobClient = eventAccount.CreateCloudBlobClient()
+
+        let sourceBlobContainer = sourceBlobClient.GetContainerReference(containerName)
         let table = tableClient.GetTableReference(containerName)
         table.CreateIfNotExists() |> ignore
-        let eventBlobContainer = blobClient.GetContainerReference(containerName + "-events")
+        let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
         eventBlobContainer.CreateIfNotExists() |> ignore
 
-        let lastExtractedBlobName = getLastExtractedBlobName rawBlobContainer
+        let lastExtractedBlobName = getLastExtractedBlobName eventBlobContainer
         let (startBlobName, lastBlobName) = 
             match lastExtractedBlobName with
             | Some(lastExtractedBlobName) -> (lastExtractedBlobName, lastExtractedBlobName)
-            | None -> ("2014/12/31/000000", "")
+            | None -> ("2014/12/01/000000", "")
 
-        let unprocessedBlobs = enumerateBlobs rawBlobContainer startBlobName |> Seq.truncate maxBlobCount |> List.ofSeq
+        let unprocessedBlobs = enumerateBlobs sourceBlobContainer startBlobName |> Seq.truncate maxBlobCount |> List.ofSeq
         match List.isEmpty unprocessedBlobs with
         | true -> ()
         | false ->
             let blobPairs = (lastBlobName, List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
             blobPairs 
-            |> PSeq.map (fun (last, next) -> extractServiceEvents rawBlobContainer last next)
+            |> PSeq.map (fun (last, next) -> extractServiceEvents sourceBlobContainer last next)
             |> PSeq.iter (fun (publicationTime, events) -> 
                         (events |> PSeq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)))
 
             let lastBlobName = unprocessedBlobs |> Seq.last
             printfn "Last processed blob: %s" lastBlobName
-            updateLastExtractedBlobName rawBlobContainer (Some lastBlobName)
+            updateLastExtractedBlobName eventBlobContainer (Some lastBlobName)
