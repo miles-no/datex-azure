@@ -146,3 +146,22 @@ module Tests =
     let ``should update 10 large blob events`` (containerName) =
         let (sourceAccount, eventAccount) = getStorageAccounts
         updateServiceEvents sourceAccount eventAccount containerName 10
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    //[<TestCase("getcctvsitetable")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
+    let ``should populate EventOriginIds table`` (containerName) =
+        let (_, eventAccount) = getStorageAccounts
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let table = tableClient.GetTableReference(containerName)
+        let idtable = tableClient.GetTableReference("eventoriginids")
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        table.ExecuteQuery(query) 
+            |> Seq.groupBy (fun x -> x.PartitionKey) 
+            |> Seq.iter (fun (x,_) -> 
+                let entity = Table.DynamicTableEntity(containerName, x)
+                let operation = Table.TableOperation.InsertOrReplace(entity)
+                idtable.Execute(operation) |> ignore)
