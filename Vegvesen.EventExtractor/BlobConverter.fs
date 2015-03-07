@@ -71,6 +71,7 @@ module BlobConverter =
         table.CreateIfNotExists() |> ignore
         let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
         eventBlobContainer.CreateIfNotExists() |> ignore
+        let idtable = tableClient.GetTableReference("eventoriginids")
 
         printfn "Extracting events from up to %d blobs, container %s" maxBlobCount containerName
 
@@ -88,10 +89,15 @@ module BlobConverter =
         | false ->
             let blobPairs = (lastBlobName, List.head unprocessedBlobs) :: (getPairwise unprocessedBlobs)
             blobPairs 
-            |> PSeq.map (fun (last, next) -> extractServiceEvents sourceBlobContainer last next)
-            |> PSeq.iter (fun (publicationTime, events) -> 
-                        (events |> PSeq.iter (fun event -> saveEvent table eventBlobContainer event publicationTime)))
-
+            |> PSeq.choose (fun (last, next) -> 
+                try
+                    Some(extractServiceEvents sourceBlobContainer last next)
+                with
+                | ex -> printfn "%s" ex.Message; None)
+            |> PSeq.iter (fun (publicationTime, events) -> (events 
+                            |> PSeq.iter (fun event -> 
+                                          saveEvent table eventBlobContainer event publicationTime
+                                          saveEventOriginId idtable containerName event |> ignore)))
             let lastBlobName = unprocessedBlobs |> Seq.last
             printfn "Updated last processed blob: %s" lastBlobName
             updateLastExtractedBlobName eventBlobContainer (Some lastBlobName)

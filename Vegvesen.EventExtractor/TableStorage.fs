@@ -9,8 +9,8 @@ open Microsoft.WindowsAzure.Storage
 [<AutoOpen>]
 module TableStorage =
 
-    let saveEvent (table: Table.CloudTable) (blobContainer : Blob.CloudBlobContainer) item (time : DateTime) =
-        let (id, content : string) = item
+    let saveEvent (table: Table.CloudTable) (blobContainer : Blob.CloudBlobContainer) event (time : DateTime) =
+        let (id, content : string) = event
         let rowKey = (DateTime.MaxValue.Ticks - time.Ticks + 1L).ToString("d19")
 
         let entity = Table.DynamicTableEntity(id, rowKey)
@@ -23,3 +23,9 @@ module TableStorage =
 
         blob.UploadText(content)
         table.Execute(operation) |> ignore
+
+    let saveEventOriginId (idTable : Table.CloudTable) containerName event =
+        let (id, _) = event
+        let entity = Table.DynamicTableEntity(containerName, id)
+        let operation = Table.TableOperation.InsertOrReplace(entity)
+        idTable.Execute(operation) |> ignore

@@ -137,13 +137,9 @@ module Tests =
     [<TestCase("getmeasuredweatherdata")>]
     //[<TestCase("getcctvsitetable")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should update 10 events`` (containerName) =
-        let (sourceAccount, eventAccount) = getStorageAccounts
-        updateServiceEvents sourceAccount eventAccount containerName 10
-
-    [<TestCase("getsituation")>]
-    let ``should update 10 large blob events`` (containerName) =
         let (sourceAccount, eventAccount) = getStorageAccounts
         updateServiceEvents sourceAccount eventAccount containerName 10
 
