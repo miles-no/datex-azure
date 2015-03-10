@@ -6,6 +6,7 @@ open System.Collections.Concurrent
 open System.IO
 open System.Text
 open System.Xml
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module XmlParser =
@@ -65,3 +66,8 @@ module XmlParser =
             | _ -> false
 
         xsnew |> Seq.filter (fun x -> isNewOrUpdated x xsold)
+
+    let convertXmlToJson xml (time : DateTime) =
+        let doc = XmlDocument()
+        doc.LoadXml(xml)
+        JsonConvert.SerializeXmlNode(doc.DocumentElement, Formatting.None, true)

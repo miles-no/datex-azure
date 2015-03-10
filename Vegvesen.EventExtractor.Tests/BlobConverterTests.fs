@@ -161,3 +161,15 @@ module Tests =
                 let entity = Table.DynamicTableEntity(containerName, x)
                 let operation = Table.TableOperation.InsertOrReplace(entity)
                 idtable.Execute(operation) |> ignore)
+
+    [<Test>]
+    let ``should convert event to json`` () =
+
+        let (sourceBlobContainer, table, _) = getStorageContainers "getmeasuredweatherdata" false
+
+        let blobName = enumerateBlobs sourceBlobContainer "2015/01/01/000000" |> Seq.head
+        
+        let (publicationTime, events) = extractServiceEvents sourceBlobContainer "" blobName
+        let xml = events |> Seq.head |> snd
+        let json = convertXmlToJson xml publicationTime
+        json |> should contain "abc"
