@@ -29,3 +29,4 @@ TestResults/
 Data/
 PublishScripts/
 ConnectionStrings.config
+Script.fsx

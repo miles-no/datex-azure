@@ -53,7 +53,6 @@
     <Compile Include="TableStorage.fs" />
     <Compile Include="XmlParser.fs" />
     <Compile Include="BlobConverter.fs" />
-    <None Include="Script.fsx" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
     <Content Include="..\ConnectionStrings.config">
