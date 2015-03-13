@@ -51,10 +51,9 @@
     <Compile Include="pseq.fs" />
     <Compile Include="BlobStorage.fs" />
     <Compile Include="TableStorage.fs" />
-    <Compile Include="DocumentDB.fs" />
+    <Compile Include="DocumentStorage.fs" />
     <Compile Include="XmlParser.fs" />
     <Compile Include="BlobConverter.fs" />
-    <None Include="Script.fsx" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
     <Content Include="..\ConnectionStrings.config">
@@ -98,6 +97,7 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

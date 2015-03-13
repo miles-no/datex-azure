@@ -6,7 +6,9 @@ open System.Collections.Concurrent
 open System.IO
 open System.Text
 open System.Xml
+open System.Xml.Linq
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
 module XmlParser =
@@ -67,7 +69,12 @@ module XmlParser =
 
         xsnew |> Seq.filter (fun x -> isNewOrUpdated x xsold)
 
-    let convertXmlToJson xml (time : DateTime) =
-        let doc = XmlDocument()
-        doc.LoadXml(xml)
-        JsonConvert.SerializeXmlNode(doc.DocumentElement, Formatting.None, true)
+    let convertXmlToJson xml =
+
+        let doc = XElement.Parse(xml)
+        for e in doc.DescendantsAndSelf() do
+            for a in e.Attributes() do
+                if a.IsNamespaceDeclaration then
+                    a.Remove()
+
+        JsonConvert.SerializeXNode(doc, Formatting.Indented, true) |> JObject.Parse

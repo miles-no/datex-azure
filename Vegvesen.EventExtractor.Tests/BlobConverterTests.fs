@@ -9,7 +9,7 @@ open NUnit.Framework
 open FsUnit
 open Vegvesen.EventExtractor
 
-module Tests =
+module BlobConverterTests =
 
     let getStorageAccounts =
         System.Net.ServicePointManager.DefaultConnectionLimit <- 100

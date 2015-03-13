@@ -26,8 +26,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configura
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vegvesen.WebJob", "Vegvesen.WebJob\Vegvesen.WebJob.csproj", "{FB681170-9CE6-4E6D-8B88-602D63845897}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.Weather", "Vegvesen.Weather\Vegvesen.Weather.fsproj", "{578D2A6E-EEA1-432F-A034-C9B44199BF16}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.EventExtractor", "Vegvesen.EventExtractor\Vegvesen.EventExtractor.fsproj", "{3A59F8A4-185C-4144-BAFF-A71D94EC7E4B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.EventExtractor.Tests", "Vegvesen.EventExtractor.Tests\Vegvesen.EventExtractor.Tests.fsproj", "{4CCF0D17-42A6-402C-A62D-83B1E5AA6EB9}"
@@ -35,6 +33,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{06BEDB1A-F62B-4044-BECD-D8F30704DBDE}"
 	ProjectSection(SolutionItems) = preProject
 		ConnectionStrings.config = ConnectionStrings.config
+		Script.fsx = Script.fsx
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Vegvesen.EventExtractor.WebJob", "Vegvesen.EventExtractor.WebJob\Vegvesen.EventExtractor.WebJob.fsproj", "{CE1638D2-D3F5-4D72-9511-03975B2877EB}"
@@ -69,10 +68,6 @@ Global
 		{FB681170-9CE6-4E6D-8B88-602D63845897}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB681170-9CE6-4E6D-8B88-602D63845897}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB681170-9CE6-4E6D-8B88-602D63845897}.Release|Any CPU.Build.0 = Release|Any CPU
-		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{578D2A6E-EEA1-432F-A034-C9B44199BF16}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3A59F8A4-185C-4144-BAFF-A71D94EC7E4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3A59F8A4-185C-4144-BAFF-A71D94EC7E4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A59F8A4-185C-4144-BAFF-A71D94EC7E4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
