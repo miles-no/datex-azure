@@ -50,3 +50,7 @@ module BlobStorage =
         |> PSeq.collect (fun x -> listBlobs x)
         |> PSeq.toList
         |> List.sort
+
+    let getBlobContent (container : Blob.CloudBlobContainer) eventSourceId timestampId =
+        let blob = container.GetBlockBlobReference(eventSourceId + "/" + timestampId)
+        blob.DownloadText()

@@ -78,3 +78,7 @@ module XmlParser =
                     a.Remove()
 
         JsonConvert.SerializeXNode(doc, Formatting.Indented, true) |> JObject.Parse
+
+    let preprocessXml containerName eventSourceId (publicationTime : DateTime) xml =
+        let doc = XElement.Parse(xml)
+        [xml]

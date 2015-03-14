@@ -31,6 +31,32 @@ module DocumentDBTests =
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
+    let ``should convert XML to JSON`` (containerName) =
+        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let blobClient = eventAccount.CreateCloudBlobClient()
+        let table = tableClient.GetTableReference(containerName)
+        let blobContainer = blobClient.GetContainerReference(containerName + "-events")
+        let documentClient = DocumentClient(Uri(documentUri), documentPassword)
+
+        let blobDir = blobContainer.ListBlobs() 
+                        |> Seq.skipWhile (fun x -> not(x :? Blob.CloudBlobDirectory)) 
+                        |> Seq.head :?> Blob.CloudBlobDirectory
+
+        let blobRef = blobContainer.ListBlobs(blobDir.Prefix) 
+                        |> Seq.head :?> Blob.CloudBlockBlob
+
+        let blob = blobContainer.GetBlockBlobReference blobRef.Name
+        let content = blob.DownloadText()
+        content |> preprocessXml containerName "123" DateTime.Now 
+        |> List.head |> ignore
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    //[<TestCase("getcctvsitetable")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
     let ``should populate DocumentDB with JSON documents`` (containerName) =
         let (eventAccount, documentUri, documentPassword) = getStorageAccounts
         let tableClient = eventAccount.CreateCloudTableClient()
@@ -41,10 +67,10 @@ module DocumentDBTests =
 
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
-            |> Seq.map (fun x -> 
-                        let blob = blobContainer.GetBlockBlobReference(x.PartitionKey + "/" + x.RowKey)
-                        let text = blob.DownloadText()
-                        convertXmlToJson text)
+            |> Seq.map (fun x -> getBlobContent blobContainer x.PartitionKey x.RowKey 
+                                |> preprocessXml containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
+            |> Seq.concat
+            |> Seq.map (fun y -> convertXmlToJson y)
             |> Seq.iter (fun x -> 
                         documentClient 
                         |> getDatabase "Events" 
