@@ -69,16 +69,42 @@ module XmlParser =
 
         xsnew |> Seq.filter (fun x -> isNewOrUpdated x xsold)
 
-    let convertXmlToJson xml =
-
-        let doc = XElement.Parse(xml)
+    let removeNamespaces (doc : XElement) =
         for e in doc.DescendantsAndSelf() do
             for a in e.Attributes() do
                 if a.IsNamespaceDeclaration then
                     a.Remove()
+        doc
 
-        JsonConvert.SerializeXNode(doc, Formatting.Indented, true) |> JObject.Parse
+    let splitSituations eventSourceId (publicationTime : DateTime) (doc : XElement) =
+        let situationHeader = XElement(doc.Name, 
+                                XAttribute(doc.Attribute(XName.Get "version")), 
+                                XAttribute(doc.Attribute(XName.Get "id")))
+        situationHeader.Add(doc.Element(doc.Name.Namespace + "overallSeverity"))
+        situationHeader.Add(doc.Element(doc.Name.Namespace + "headerInformation"))
 
-    let preprocessXml containerName eventSourceId (publicationTime : DateTime) xml =
-        let doc = XElement.Parse(xml)
-        [xml]
+        doc.Elements(doc.Name.Namespace + "situationRecord") 
+        |> Seq.map (fun x -> 
+                    x.AddFirst situationHeader
+                    x)
+        |> List.ofSeq
+
+    let preprocessXml containerName eventSourceId (publicationTime : DateTime) (doc : XElement) =
+        match containerName with
+        | "getsituation" -> splitSituations eventSourceId publicationTime doc
+        | _ -> [doc]
+
+    let postprocessJson containerName eventSourceId index (publicationTime : DateTime) (json : JObject) =
+        let id = match containerName with
+                    | "getsituation" -> sprintf "%s_%d" eventSourceId (index+1)
+                    | _ -> eventSourceId
+        json.AddFirst(JProperty("publicationTime", publicationTime))
+        json.AddFirst(JProperty("id", sprintf "%s_%s" id (publicationTime.ToString("s"))))
+        json
+
+    let convertXmlToJson containerName eventSourceId (publicationTime : DateTime) xml =
+        XElement.Parse(xml) 
+        |> removeNamespaces
+        |> preprocessXml containerName eventSourceId publicationTime
+        |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.Indented, true) |> JObject.Parse)
+        |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i publicationTime x)

@@ -48,7 +48,7 @@ module DocumentDBTests =
 
         let blob = blobContainer.GetBlockBlobReference blobRef.Name
         let content = blob.DownloadText()
-        content |> preprocessXml containerName "123" DateTime.Now 
+        content |> convertXmlToJson containerName "123" DateTime.Now 
         |> List.head |> ignore
 
     [<TestCase("getmeasurementweathersitetable")>]
@@ -68,9 +68,8 @@ module DocumentDBTests =
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
             |> Seq.map (fun x -> getBlobContent blobContainer x.PartitionKey x.RowKey 
-                                |> preprocessXml containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
+                                |> convertXmlToJson containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
             |> Seq.concat
-            |> Seq.map (fun y -> convertXmlToJson y)
             |> Seq.iter (fun x -> 
                         documentClient 
                         |> getDatabase "Events" 
