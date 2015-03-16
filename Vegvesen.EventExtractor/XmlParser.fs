@@ -94,12 +94,34 @@ module XmlParser =
         | "getsituation" -> splitSituations eventSourceId publicationTime doc
         | _ -> [doc]
 
+    let rec groupCoordinatesPairwise (collection : double list) =
+        match collection with
+        | [] -> []
+        | x :: y :: tail -> JArray([x; y]) :: groupCoordinatesPairwise tail
+        | _ -> []
+
+    let coordinatesToArray (text : string) =
+        text.Split([|' '; ','; ';'; '\r'; '\n'|]) 
+        |> Array.filter (fun x -> not (String.IsNullOrWhiteSpace(x)))
+        |> Array.map (fun x -> System.Double.Parse x)
+
+    let rec convertCoordinates (token : JToken) =
+        token
+        |> Seq.iter (fun x ->
+                    if x :? JProperty && (x :?> JProperty).Name = "coordinates" then
+                        let prop = (x :?> JProperty)
+                        let value = coordinatesToArray (prop.Value.ToString()) |> List.ofArray |> groupCoordinatesPairwise
+                        prop.Value <- JArray(value)
+                    else
+                        convertCoordinates x)
+
     let postprocessJson containerName eventSourceId index (publicationTime : DateTime) (json : JObject) =
         let id = match containerName with
                     | "getsituation" -> sprintf "%s_%d" eventSourceId (index+1)
                     | _ -> eventSourceId
         json.AddFirst(JProperty("publicationTime", publicationTime))
         json.AddFirst(JProperty("id", sprintf "%s_%s" id (publicationTime.ToString("s"))))
+        convertCoordinates json
         json
 
     let convertXmlToJson containerName eventSourceId (publicationTime : DateTime) xml =

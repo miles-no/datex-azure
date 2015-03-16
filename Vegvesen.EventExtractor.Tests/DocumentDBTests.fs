@@ -57,7 +57,7 @@ module DocumentDBTests =
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
-    let ``should populate DocumentDB with JSON documents`` (containerName) =
+    let ``should populate DocumentDB with all JSON documents`` (containerName) =
         let (eventAccount, documentUri, documentPassword) = getStorageAccounts
         let tableClient = eventAccount.CreateCloudTableClient()
         let blobClient = eventAccount.CreateCloudBlobClient()
@@ -67,6 +67,33 @@ module DocumentDBTests =
 
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
+            |> Seq.map (fun x -> getBlobContent blobContainer x.PartitionKey x.RowKey 
+                                |> convertXmlToJson containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
+            |> Seq.concat
+            |> Seq.iter (fun x -> 
+                        documentClient 
+                        |> getDatabase "Events" 
+                        |> getCollection containerName 
+                        |> createDocument x 
+                        |> ignore)
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    //[<TestCase("getcctvsitetable")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
+    let ``should populate DocumentDB with first 10 JSON documents`` (containerName) =
+        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let blobClient = eventAccount.CreateCloudBlobClient()
+        let table = tableClient.GetTableReference(containerName)
+        let blobContainer = blobClient.GetContainerReference(containerName + "-events")
+        let documentClient = DocumentClient(Uri(documentUri), documentPassword)
+
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        table.ExecuteQuery(query) 
+            |> Seq.take 10
             |> Seq.map (fun x -> getBlobContent blobContainer x.PartitionKey x.RowKey 
                                 |> convertXmlToJson containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
             |> Seq.concat
