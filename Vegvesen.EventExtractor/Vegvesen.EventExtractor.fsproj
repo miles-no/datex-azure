@@ -52,8 +52,10 @@
     <Compile Include="BlobStorage.fs" />
     <Compile Include="TableStorage.fs" />
     <Compile Include="DocumentStorage.fs" />
-    <Compile Include="XmlParser.fs" />
+    <Compile Include="XmlConverter.fs" />
+    <Compile Include="JsonConverter.fs" />
     <Compile Include="BlobConverter.fs" />
+    <Compile Include="DocumentConverter.fs" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
     <Content Include="..\ConnectionStrings.config">
