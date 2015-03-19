@@ -32,19 +32,36 @@ module JsonConverter =
                         convertCoordinates x)
 
     let extractCoordinates containerName (json : JObject) =
-        let rec extractCoordinatesNode (token : JToken) =
-            token
-            |> Seq.reduce (fun acc x ->
-                        if x :? JProperty && (x :?> JProperty).Name = "linearExtension" then
-                            let prop = (x :?> JProperty)
-                            let value = prop.Value
-                            prop.Value <- null
-                            value
-                        else
-                            extractCoordinatesNode x)
+
+        let rec flattenProperties (json : JObject) =
+            seq {
+                for x in json do
+                    match x with
+                    | xp when (xp :? JProperty) ->
+                        let prop = xp :?> JProperty
+                        match prop.Value with
+                        | y when (y :? JObject) ->
+                            yield prop
+                            yield! flattenProperties (y :?> JObject)
+                        | y when (y :? JValue) ->                    
+                            yield prop
+                        | _ -> ()
+                    | _ -> ()
+            }
+
+        let extractPropertyNode propName (props : seq<JProperty>) =
+            props |> Seq.pick (fun x -> 
+                match x.Name with
+                | n when n = propName ->
+                    let v = x.Value
+                    x.Value <- null
+                    Some v
+                | _ -> None)
 
         match containerName with
-        | "getsituation" | "getpredefinedtraveltimelocations" -> (json, Some(extractCoordinatesNode json))
+        | "getsituation" | "getpredefinedtraveltimelocations" -> 
+            let t = json |> flattenProperties
+            (json, Some(json |> flattenProperties |> extractPropertyNode "linearExtension"))
         | _ -> (json, None)
 
     let postprocessJson containerName eventSourceId index (publicationTime : DateTime) (json : JObject) =
@@ -54,3 +71,4 @@ module JsonConverter =
         json.AddFirst(JProperty("publicationTime", publicationTime))
         json.AddFirst(JProperty("id", sprintf "%s_%s" id (publicationTime.ToString("s"))))
         convertCoordinates json
+        json

@@ -23,7 +23,7 @@ module DocumentConverter =
         |> preprocessXml containerName eventSourceId publicationTime
         |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.Indented, true) |> JObject.Parse)
         |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i publicationTime x)
-        //|> List.map (fun x -> extractCoordinates containerName x)
+        |> List.map (fun x -> extractCoordinates containerName x)
 
     let populateEventDocumentStore (eventAccount : CloudStorageAccount) (documentUri : string) (documentPassword : string) containerName maxEventCount =
         let tableClient = eventAccount.CreateCloudTableClient()
@@ -37,7 +37,9 @@ module DocumentConverter =
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
             |> Seq.truncate maxEventCount
-            |> Seq.map (fun x -> getBlobContent blobContainer x.PartitionKey x.RowKey 
-                                |> convertXmlToJson containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
+            |> Seq.map (fun x -> 
+                getBlobContent blobContainer x.PartitionKey x.RowKey 
+                |> convertXmlToJson containerName x.PartitionKey (x.Properties.Item("PublicationTime").DateTime.Value))
             |> Seq.concat
-            |> Seq.iter (fun x -> saveDocument documentClient containerName x)
+            |> Seq.iter (fun (json, node) -> 
+                saveDocument documentClient containerName json)

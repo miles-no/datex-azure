@@ -7,6 +7,7 @@ open System.IO
 open Microsoft.Azure.Documents
 open Microsoft.Azure.Documents.Client
 open Microsoft.Azure.Documents.Linq
+open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
 module DocumentStorage =
@@ -41,7 +42,7 @@ module DocumentStorage =
             printfn "OK"
             result
 
-    let saveDocument (client : DocumentClient) containerName (document : obj) =
+    let saveDocument (client : DocumentClient) containerName (document : JObject) =
         client 
         |> getDatabase DatabaseName 
         |> getCollection containerName 

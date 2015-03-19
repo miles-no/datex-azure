@@ -48,8 +48,10 @@ module DocumentDBTests =
 
         let blob = blobContainer.GetBlockBlobReference blobRef.Name
         let content = blob.DownloadText()
-        content |> convertXmlToJson containerName "123" DateTime.Now 
-        |> List.head |> ignore
+        let result = content 
+                    |> convertXmlToJson containerName "123" DateTime.Now 
+                    |> List.head 
+        printfn "%s" (result.ToString())
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
