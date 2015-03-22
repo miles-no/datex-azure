@@ -74,7 +74,7 @@ module XmlConverter =
                     a.Remove()
         doc
 
-    let splitSituations eventSourceId (publicationTime : DateTime) (doc : XElement) =
+    let splitSituations eventSourceId (doc : XElement) =
         let situationHeader = XElement(doc.Name, 
                                 XAttribute(doc.Attribute(XName.Get "version")), 
                                 XAttribute(doc.Attribute(XName.Get "id")))
@@ -87,7 +87,7 @@ module XmlConverter =
                     x)
         |> List.ofSeq
 
-    let preprocessXml containerName eventSourceId (publicationTime : DateTime) (doc : XElement) =
+    let preprocessXml containerName eventSourceId (doc : XElement) =
         match containerName with
-        | "getsituation" -> splitSituations eventSourceId publicationTime doc
+        | "getsituation" -> splitSituations eventSourceId doc
         | _ -> [doc]

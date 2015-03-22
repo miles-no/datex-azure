@@ -48,10 +48,11 @@ module DocumentDBTests =
 
         let blob = blobContainer.GetBlockBlobReference blobRef.Name
         let content = blob.DownloadText()
-        let result = content 
-                    |> convertXmlToJson containerName "123" DateTime.Now 
-                    |> List.head 
-        printfn "%s" (result.ToString())
+        let (json,node,_,_) = content 
+                            |> convertXmlToJson containerName "123" DateTime.Now  DateTime.Now
+                            |> List.head 
+        printfn "JSON: %s" (json.ToString())
+        if node.IsSome then printfn "Coordinates: %s" ((Option.get node).ToString())
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -72,3 +73,26 @@ module DocumentDBTests =
     let ``should populate DocumentDB with 1000 JSON documents`` (containerName) =
         let (eventAccount, documentUri, documentPassword) = getStorageAccounts
         populateEventDocumentStore eventAccount documentUri documentPassword containerName 1000
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    //[<TestCase("getcctvsitetable")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
+    let ``should read first document from DocumentDB`` (containerName) =
+        let (coordAccount, documentUri, documentPassword) = getStorageAccounts
+        use documentClient = new DocumentClient(Uri(documentUri), documentPassword)
+        let json = documentClient 
+                |> getDatabase DatabaseName 
+                |> getCollection containerName 
+                |> getDocuments
+                |> Seq.head
+        printfn "JSON: %s" (json.ToString())
+
+        let blobClient = coordAccount.CreateCloudBlobClient()
+        let (_,coordinates) = loadDocumentAttachments blobClient containerName json
+        if coordinates.IsSome then
+            printfn "Coordinates: %s" (coordinates.ToString())
+        else
+            ()

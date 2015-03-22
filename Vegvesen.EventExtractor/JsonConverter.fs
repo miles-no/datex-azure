@@ -64,11 +64,11 @@ module JsonConverter =
             (json, Some(json |> flattenProperties |> extractPropertyNode "linearExtension"))
         | _ -> (json, None)
 
-    let postprocessJson containerName eventSourceId index (publicationTime : DateTime) (json : JObject) =
+    let postprocessJson containerName eventSourceId index (eventTime : DateTime) (publicationTime : DateTime) (json : JObject) =
         let id = match containerName with
                     | "getsituation" -> sprintf "%s_%d" eventSourceId (index+1)
                     | _ -> eventSourceId
         json.AddFirst(JProperty("publicationTime", publicationTime))
-        json.AddFirst(JProperty("id", sprintf "%s_%s" id (publicationTime.ToString("s"))))
+        json.AddFirst(JProperty("id", sprintf "%s_%s" id (Utils.timeToId eventTime)))
         convertCoordinates json
         json
