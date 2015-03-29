@@ -21,10 +21,16 @@ module DocumentConverter =
         XElement.Parse(xml) 
         |> removeNamespaces
         |> preprocessXml containerName eventSourceId
-        |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.Indented, true) |> JObject.Parse)
+        |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.None, true) |> JObject.Parse)
         |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i eventTime publicationTime x)
         |> List.map (fun x -> extractCoordinates containerName x)
-        |> List.map (fun (json, node) -> (json, node, eventSourceId, eventTime))
+        |> List.map (fun (json, coordinates) -> (json, coordinates, eventSourceId, eventTime))
+
+    let getEventXmlAndConvertToJson (entity : Table.DynamicTableEntity) (eventBlobContainer : Blob.CloudBlobContainer) containerName =
+        getBlobContent eventBlobContainer entity.PartitionKey entity.RowKey 
+        |> convertXmlToJson containerName entity.PartitionKey 
+            (Utils.rowKeyToTime entity.RowKey) 
+            (entity.Properties.["PublicationTime"].DateTime).Value
 
     let populateEventDocumentStore (eventAccount : CloudStorageAccount) (documentUri : string) (documentPassword : string) containerName maxEventCount =
         let tableClient = eventAccount.CreateCloudTableClient()
@@ -39,17 +45,14 @@ module DocumentConverter =
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
             |> Seq.truncate maxEventCount
-            |> Seq.map (fun x -> 
-                getBlobContent eventBlobContainer x.PartitionKey x.RowKey 
-                |> convertXmlToJson containerName x.PartitionKey 
-                    (Utils.rowKeyToTime x.RowKey) 
-                    (x.Properties.["PublicationTime"].DateTime).Value)
+            |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
             |> Seq.concat
-            |> Seq.iter (fun (json, node, eventSourceId, eventTime) -> 
+            |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
                 saveEventAsJsonToDocumentStore documentClient containerName json
-                match node with
+                let (eventSourceId, timeId) = parseDocumentId json
+                match coordinates with
                 | None -> ()
-                | Some(node) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer node eventSourceId eventTime)
+                | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
 
     let populateEventJsonStore (eventAccount : CloudStorageAccount) containerName maxEventCount =
         let tableClient = eventAccount.CreateCloudTableClient()
@@ -64,17 +67,14 @@ module DocumentConverter =
         let query = Table.TableQuery<Table.DynamicTableEntity>()
         table.ExecuteQuery(query) 
             |> Seq.truncate maxEventCount
-            |> Seq.map (fun x -> 
-                getBlobContent eventBlobContainer x.PartitionKey x.RowKey 
-                |> convertXmlToJson containerName x.PartitionKey 
-                    (Utils.rowKeyToTime x.RowKey) 
-                    (x.Properties.["PublicationTime"].DateTime).Value)
+            |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
             |> Seq.concat
-            |> Seq.iter (fun (json, node, eventSourceId, eventTime) -> 
+            |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
                 saveEventAsJsonToBlobStore jsonBlobContainer containerName json
-                match node with
+                let (eventSourceId, timeId) = parseDocumentId json
+                match coordinates with
                 | None -> ()
-                | Some(node) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer node eventSourceId eventTime)
+                | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
 
     let loadDocumentAttachments (blobClient : Blob.CloudBlobClient) containerName (document : Document) =
         match containerName with

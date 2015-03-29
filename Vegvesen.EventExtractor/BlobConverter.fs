@@ -4,6 +4,7 @@ open System
 open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
+open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
@@ -107,18 +108,15 @@ module BlobConverter =
 
     let saveEventAsJsonToBlobStore (blobContainer : Blob.CloudBlobContainer) containerName (json : JObject) =
         blobContainer.CreateIfNotExists() |> ignore
-        let id = json.["id"].ToString()
-        let pos = id.LastIndexOf('_')
-        let eventSourceId = id.Substring(0, pos)
-        let timeId = id.Substring(pos + 1)
+        let (eventSourceId, timeId) = parseDocumentId json
         let blobName = eventSourceId + "/" + timeId
         let blob = blobContainer.GetBlockBlobReference(blobName)
         blob.Properties.ContentType <-"application/json"
-        blob.UploadText(json.ToString())
+        blob.UploadText(json.ToString(Formatting.None))
 
     let saveEventCoordinatesAsJsonToBlobStore (blobContainer : Blob.CloudBlobContainer) (json : JToken) eventSourceId eventTime =
         blobContainer.CreateIfNotExists() |> ignore
         let blobName = eventSourceId + "/" + (Utils.timeToId eventTime)
         let blob = blobContainer.GetBlockBlobReference(blobName)
         blob.Properties.ContentType <-"application/json"
-        blob.UploadText(json.ToString())
+        blob.UploadText(json.ToString(Formatting.None))

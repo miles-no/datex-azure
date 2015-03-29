@@ -48,3 +48,10 @@ module DocumentStorage =
         |> getCollection containerName 
         |> insertDocument document 
         |> ignore
+
+    let parseDocumentId (json : JObject) =
+        let id = json.["id"].ToString()
+        let pos = id.LastIndexOf('_')
+        let eventSourceId = id.Substring(0, pos)
+        let timeId = id.Substring(pos + 1)
+        (eventSourceId, timeId)

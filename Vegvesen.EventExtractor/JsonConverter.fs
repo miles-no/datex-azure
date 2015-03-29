@@ -50,18 +50,19 @@ module JsonConverter =
             }
 
         let extractPropertyNode propName (props : seq<JProperty>) =
-            props |> Seq.pick (fun x -> 
-                match x.Name with
-                | n when n = propName ->
-                    let v = x.Value
-                    x.Value <- null
-                    Some v
-                | _ -> None)
+            props |> Seq.tryPick (fun x -> 
+                    match x.Name with
+                    | n when n = propName ->
+                        let v = x.Value
+                        x.Value <- null
+                        Some v
+                    | _ -> None)
 
         match containerName with
         | "getsituation" | "getpredefinedtraveltimelocations" -> 
-            let t = json |> flattenProperties
-            (json, Some(json |> flattenProperties |> extractPropertyNode "linearExtension"))
+            match json |> flattenProperties |> extractPropertyNode "linearExtension" with
+            | Some coordinates -> (json, Some coordinates)
+            | None -> (json, None)
         | _ -> (json, None)
 
     let postprocessJson containerName eventSourceId index (eventTime : DateTime) (publicationTime : DateTime) (json : JObject) =
