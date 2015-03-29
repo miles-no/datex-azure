@@ -112,6 +112,41 @@ module StorageMeasurments =
         printfn "%d blobs of %i KB in %s" count (sizeInKilobytes (size / (int64)count)) containerName |> ignore
 
     [<TestCase("getsituation")>]
+    let ``should list situation event blob count and sizes for one day`` (containerName) =
+
+        let (_, _, eventBlobContainer) = getStorageContainers containerName false
+
+        let dirs = eventBlobContainer.ListBlobs("")
+                |> Seq.filter (fun x -> x :? Blob.CloudBlobDirectory)
+                |> Seq.map (fun x -> x :?> Blob.CloudBlobDirectory)
+                |> Seq.map (fun x -> x.Prefix)
+        let dirCount = Seq.length dirs
+
+        printfn "%d event blob directories" dirCount
+
+        let getBlobStats (blobs : seq<Blob.CloudBlockBlob>) =
+            let count = Seq.length blobs
+            match count with
+            | 0 -> (0, 0L)
+            | _ -> (count, (int64)count * (Seq.head blobs).Properties.Length)
+
+        let isOfDate (blobName : string) year month day =
+            let rowKey = Seq.last (blobName.Split('/'))
+            let time = Utils.rowKeyToTime rowKey
+            let dateFrom = DateTime(year, month, day)
+            let dateTo = dateFrom.AddDays(1.)
+            time >= dateFrom && time < dateTo
+
+        let (count, size) = dirs 
+                            |> Seq.map (fun x -> eventBlobContainer.ListBlobs(x)
+                                                |> Seq.map (fun x -> x :?> Blob.CloudBlockBlob) 
+                                                |> Seq.filter (fun x -> isOfDate x.Name 2015 1 15)
+                                                |> getBlobStats)
+                            |> Seq.fold (fun (count, size) (x, y) -> (count + x, size + y)) (0, 0L)
+
+        printfn "%d blobs of %i KB in %s" count (sizeInKilobytes (size / (int64)count)) containerName |> ignore
+
+    [<TestCase("getsituation")>]
     let ``should load situation events`` (containerName) =
 
         let (_, _, eventBlobContainer) = getStorageContainers containerName false
