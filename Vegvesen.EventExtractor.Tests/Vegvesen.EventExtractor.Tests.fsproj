@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="BlobConverterTests.fs" />
     <Compile Include="DocumentDBTests.fs" />
+    <Compile Include="StorageMeasurements.fs" />
     <Content Include="packages.config" />
     <Content Include="app.config" />
     <Content Include="..\ConnectionStrings.config">

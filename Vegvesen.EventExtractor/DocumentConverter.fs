@@ -46,15 +46,35 @@ module DocumentConverter =
                     (x.Properties.["PublicationTime"].DateTime).Value)
             |> Seq.concat
             |> Seq.iter (fun (json, node, eventSourceId, eventTime) -> 
-                saveDocument documentClient containerName json
+                saveEventAsJsonToDocumentStore documentClient containerName json
                 match node with
                 | None -> ()
-                | Some(node) ->
-                    coordBlobContainer.CreateIfNotExists() |> ignore
-                    let blobName = eventSourceId + "/" + (Utils.timeToId eventTime)
-                    let blob = coordBlobContainer.GetBlockBlobReference(blobName);
-                    blob.Properties.ContentType <-"application/json"
-                    blob.UploadText(node.ToString()))
+                | Some(node) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer node eventSourceId eventTime)
+
+    let populateEventJsonStore (eventAccount : CloudStorageAccount) containerName maxEventCount =
+        let tableClient = eventAccount.CreateCloudTableClient()
+        let eventBlobClient = eventAccount.CreateCloudBlobClient()
+        let table = tableClient.GetTableReference(containerName)
+        let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
+        let jsonBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events-json")
+        let coordBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
+
+        printfn "Populating up to %d events, container %s" maxEventCount containerName
+
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        table.ExecuteQuery(query) 
+            |> Seq.truncate maxEventCount
+            |> Seq.map (fun x -> 
+                getBlobContent eventBlobContainer x.PartitionKey x.RowKey 
+                |> convertXmlToJson containerName x.PartitionKey 
+                    (Utils.rowKeyToTime x.RowKey) 
+                    (x.Properties.["PublicationTime"].DateTime).Value)
+            |> Seq.concat
+            |> Seq.iter (fun (json, node, eventSourceId, eventTime) -> 
+                saveEventAsJsonToBlobStore jsonBlobContainer containerName json
+                match node with
+                | None -> ()
+                | Some(node) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer node eventSourceId eventTime)
 
     let loadDocumentAttachments (blobClient : Blob.CloudBlobClient) containerName (document : Document) =
         match containerName with

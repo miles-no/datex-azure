@@ -42,7 +42,7 @@ module DocumentStorage =
             printfn "OK"
             result
 
-    let saveDocument (client : DocumentClient) containerName (document : JObject) =
+    let saveEventAsJsonToDocumentStore (client : DocumentClient) containerName (document : JObject) =
         client 
         |> getDatabase DatabaseName 
         |> getCollection containerName 

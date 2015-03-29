@@ -27,7 +27,6 @@ module DocumentDBTests =
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
-    //[<TestCase("getcctvsitetable")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
@@ -56,7 +55,6 @@ module DocumentDBTests =
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
-    //[<TestCase("getcctvsitetable")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
@@ -66,7 +64,6 @@ module DocumentDBTests =
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
-    //[<TestCase("getcctvsitetable")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
@@ -76,7 +73,24 @@ module DocumentDBTests =
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
-    //[<TestCase("getcctvsitetable")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
+    let ``should populate blob storage with first JSON document`` (containerName) =
+        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
+        populateEventJsonStore eventAccount containerName 1
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
+    let ``should populate blob storage with 100 JSON documents`` (containerName) =
+        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
+        populateEventJsonStore eventAccount containerName 100
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
