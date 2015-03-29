@@ -11,24 +11,12 @@ open Vegvesen.EventExtractor
 
 module StorageMeasurments =
 
-    let getStorageAccounts =
-        System.Net.ServicePointManager.DefaultConnectionLimit <- 100
-        System.Threading.ThreadPool.SetMinThreads(100, 100) |> ignore
-        let sourceAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings.Item("AzureWebJobsStorage").ConnectionString)
-        let eventAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings.Item("VegvesenEventStorage").ConnectionString)
-        (sourceAccount, eventAccount)
-
     let getStorageContainers containerName clearContainers =
-        let (sourceAccount, eventAccount) = getStorageAccounts
-        let containerName = containerName
+        let account = AccountInfo()
 
-        let sourceBlobClient = sourceAccount.CreateCloudBlobClient()
-        let tableClient = eventAccount.CreateCloudTableClient()
-        let eventBlobClient = eventAccount.CreateCloudBlobClient()
-
-        let sourceBlobContainer = sourceBlobClient.GetContainerReference(containerName)
-        let table = tableClient.GetTableReference(containerName)
-        let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
+        let sourceBlobContainer = account.SourceXmlBlobClient.GetContainerReference(containerName)
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
 
         (sourceBlobContainer, table, eventBlobContainer)
 

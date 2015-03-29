@@ -14,29 +14,15 @@ open Vegvesen.EventExtractor
 
 module DocumentDBTests =
 
-    let getStorageAccounts =
-        System.Net.ServicePointManager.DefaultConnectionLimit <- 100
-        System.Threading.ThreadPool.SetMinThreads(100, 100) |> ignore
-        let eventAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings.Item("VegvesenEventStorage").ConnectionString)
-        let documentConnectionString = ConfigurationManager.ConnectionStrings.Item("VegvesenEventDocumentDB").ConnectionString
-        let endpointKV = documentConnectionString.Split(';') |> Seq.head
-        let authorizaionKV = documentConnectionString.Split(';') |> Seq.last
-        let documentUri = endpointKV.Substring(string("EndpointUrl=").Length)
-        let documentPassword = authorizaionKV.Substring(string("AuthorizationKey=").Length)
-        (eventAccount, documentUri, documentPassword)
-
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should convert XML to JSON`` (containerName) =
-        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
-        let tableClient = eventAccount.CreateCloudTableClient()
-        let blobClient = eventAccount.CreateCloudBlobClient()
-        let table = tableClient.GetTableReference(containerName)
-        let blobContainer = blobClient.GetContainerReference(containerName + "-events")
-        let documentClient = DocumentClient(Uri(documentUri), documentPassword)
+        let account = AccountInfo()
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let blobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
 
         let blobDir = blobContainer.ListBlobs() 
                         |> Seq.skipWhile (fun x -> not(x :? Blob.CloudBlobDirectory)) 
@@ -59,8 +45,8 @@ module DocumentDBTests =
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should populate DocumentDB with first JSON document`` (containerName) =
-        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
-        populateEventDocumentStore eventAccount documentUri documentPassword containerName 1
+        let account = AccountInfo()
+        populateEventDocumentStore account containerName 1
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -68,8 +54,8 @@ module DocumentDBTests =
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should populate DocumentDB with 1000 JSON documents`` (containerName) =
-        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
-        populateEventDocumentStore eventAccount documentUri documentPassword containerName 1000
+        let account = AccountInfo()
+        populateEventDocumentStore account containerName 1000
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -77,8 +63,8 @@ module DocumentDBTests =
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should populate blob storage with first JSON document`` (containerName) =
-        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
-        populateEventJsonStore eventAccount containerName 1
+        let account = AccountInfo()
+        populateEventJsonStore account containerName 1
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -86,8 +72,8 @@ module DocumentDBTests =
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should populate blob storage with 100 JSON documents`` (containerName) =
-        let (eventAccount, documentUri, documentPassword) = getStorageAccounts
-        populateEventJsonStore eventAccount containerName 100
+        let account = AccountInfo()
+        populateEventJsonStore account containerName 100
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -95,17 +81,15 @@ module DocumentDBTests =
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
     let ``should read first document from DocumentDB`` (containerName) =
-        let (coordAccount, documentUri, documentPassword) = getStorageAccounts
-        use documentClient = new DocumentClient(Uri(documentUri), documentPassword)
-        let json = documentClient 
+        let account = AccountInfo()
+        let json = account.EventDocumentClient
                 |> getDatabase DatabaseName 
                 |> getCollection containerName 
                 |> getDocuments
                 |> Seq.head
         printfn "JSON: %s" (json.ToString())
 
-        let blobClient = coordAccount.CreateCloudBlobClient()
-        let (_,coordinates) = loadDocumentAttachments blobClient containerName json
+        let (_,coordinates) = loadDocumentAttachments account containerName json
         if coordinates.IsSome then
             printfn "Coordinates: %s" (coordinates.ToString())
         else

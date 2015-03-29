@@ -32,13 +32,10 @@ module DocumentConverter =
             (Utils.rowKeyToTime entity.RowKey) 
             (entity.Properties.["PublicationTime"].DateTime).Value
 
-    let populateEventDocumentStore (eventAccount : CloudStorageAccount) (documentUri : string) (documentPassword : string) containerName maxEventCount =
-        let tableClient = eventAccount.CreateCloudTableClient()
-        let blobClient = eventAccount.CreateCloudBlobClient()
-        let table = tableClient.GetTableReference(containerName)
-        let eventBlobContainer = blobClient.GetContainerReference(containerName + "-events")
-        use documentClient = new DocumentClient(Uri(documentUri), documentPassword)
-        let coordBlobContainer = blobClient.GetContainerReference(containerName + "-coordinates")
+    let populateEventDocumentStore (account : AccountInfo) containerName maxEventCount =
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-coordinates")
 
         printfn "Populating up to %d events, container %s" maxEventCount containerName
 
@@ -48,19 +45,17 @@ module DocumentConverter =
             |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
             |> Seq.concat
             |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
-                saveEventAsJsonToDocumentStore documentClient containerName json
+                saveEventAsJsonToDocumentStore account.EventDocumentClient containerName json
                 let (eventSourceId, timeId) = parseDocumentId json
                 match coordinates with
                 | None -> ()
                 | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
 
-    let populateEventJsonStore (eventAccount : CloudStorageAccount) containerName maxEventCount =
-        let tableClient = eventAccount.CreateCloudTableClient()
-        let eventBlobClient = eventAccount.CreateCloudBlobClient()
-        let table = tableClient.GetTableReference(containerName)
-        let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
-        let jsonBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events-json")
-        let coordBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
+    let populateEventJsonStore (account : AccountInfo) containerName maxEventCount =
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(containerName + "-events-json")
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
 
         printfn "Populating up to %d events, container %s" maxEventCount containerName
 
@@ -76,10 +71,10 @@ module DocumentConverter =
                 | None -> ()
                 | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
 
-    let loadDocumentAttachments (blobClient : Blob.CloudBlobClient) containerName (document : Document) =
+    let loadDocumentAttachments (account : AccountInfo) containerName (document : Document) =
         match containerName with
         | "getsituation" | "getpredefinedtraveltimelocations" -> 
-            let blobContainer = blobClient.GetContainerReference(containerName + "-coordinates")
+            let blobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-coordinates")
             let blobName = document.Id
             let blob = blobContainer.GetBlockBlobReference(blobName);
             let coordinates = blob.DownloadText()

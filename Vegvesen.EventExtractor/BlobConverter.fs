@@ -63,17 +63,13 @@ module BlobConverter =
         | [item] -> []
         | first :: second :: tail -> (first, second) :: getPairwise (second :: tail)
 
-    let updateServiceEvents (sourceAccount : CloudStorageAccount) (eventAccount : CloudStorageAccount) containerName maxBlobCount =        
-        let sourceBlobClient = sourceAccount.CreateCloudBlobClient()
-        let tableClient = eventAccount.CreateCloudTableClient()
-        let eventBlobClient = eventAccount.CreateCloudBlobClient()
-
-        let sourceBlobContainer = sourceBlobClient.GetContainerReference(containerName)
-        let table = tableClient.GetTableReference(containerName)
+    let updateServiceEvents (account : AccountInfo) containerName maxBlobCount =        
+        let sourceBlobContainer = account.SourceXmlBlobClient.GetContainerReference(containerName)
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
         table.CreateIfNotExists() |> ignore
-        let eventBlobContainer = eventBlobClient.GetContainerReference(containerName + "-events")
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
         eventBlobContainer.CreateIfNotExists() |> ignore
-        let idtable = tableClient.GetTableReference("eventoriginids")
+        let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
 
         printfn "Extracting events from up to %d blobs, container %s" maxBlobCount containerName
 
