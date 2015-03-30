@@ -9,6 +9,8 @@ open Microsoft.Azure.Documents.Client
 open Microsoft.Azure.Documents.Linq
 open Newtonsoft.Json.Linq
 
+open Vegvesen.Model
+
 [<AutoOpen>]
 module DocumentStorage =
 
@@ -42,9 +44,19 @@ module DocumentStorage =
             printfn "OK"
             result
 
-    let saveEventAsJsonToDocumentStore (client : DocumentClient) containerName (document : JObject) =
-        client 
+    let saveEventAsJsonToDocumentStore (account : AccountInfo) containerName (document : JObject) =
+        account.EventDocumentClient
         |> getDatabase DatabaseName 
         |> getCollection containerName 
         |> insertDocument document 
         |> ignore
+
+    let loadDocumentAttachments (account : AccountInfo) containerName (document : Document) =
+        match containerName with
+        | "getsituation" | "getpredefinedtraveltimelocations" -> 
+            let blobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-coordinates")
+            let blobName = document.Id
+            let blob = blobContainer.GetBlockBlobReference(blobName);
+            let coordinates = blob.DownloadText()
+            (document, Some coordinates)
+        | _ -> (document, None)

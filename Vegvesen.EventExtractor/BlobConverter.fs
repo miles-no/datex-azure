@@ -118,3 +118,23 @@ module BlobConverter =
         let blob = blobContainer.GetBlockBlobReference(blobName)
         blob.Properties.ContentType <-"application/json"
         blob.UploadText(json.ToString(Formatting.None))
+
+    let populateEventBlobStore (account : AccountInfo) containerName maxEventCount =
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(containerName + "-events-json")
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
+
+        printfn "Populating up to %d events, container %s" maxEventCount containerName
+
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        table.ExecuteQuery(query) 
+            |> Seq.truncate maxEventCount
+            |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
+            |> Seq.concat
+            |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
+                saveEventAsJsonToBlobStore jsonBlobContainer containerName json
+                let (eventSourceId, timeId) = Utils.parseJsonId json
+                match coordinates with
+                | None -> ()
+                | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
