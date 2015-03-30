@@ -7,6 +7,8 @@ open Microsoft.WindowsAzure.Storage
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open Vegvesen.Model
+
 [<AutoOpen>]
 module BlobConverter =
 
@@ -104,7 +106,7 @@ module BlobConverter =
 
     let saveEventAsJsonToBlobStore (blobContainer : Blob.CloudBlobContainer) containerName (json : JObject) =
         blobContainer.CreateIfNotExists() |> ignore
-        let (eventSourceId, timeId) = parseDocumentId json
+        let (eventSourceId, timeId) = Utils.parseJsonId json
         let blobName = eventSourceId + "/" + timeId
         let blob = blobContainer.GetBlockBlobReference(blobName)
         blob.Properties.ContentType <-"application/json"

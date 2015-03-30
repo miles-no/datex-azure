@@ -4,8 +4,12 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
+open System.Xml.Linq
+open Microsoft.WindowsAzure.Storage
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+
+open Vegvesen.Model
 
 [<AutoOpen>]
 module JsonConverter =
@@ -73,3 +77,18 @@ module JsonConverter =
         json.AddFirst(JProperty("id", sprintf "%s_%s" id (Utils.timeToId eventTime)))
         convertCoordinates json
         json
+
+    let convertXmlToJson containerName eventSourceId (eventTime : DateTime) (publicationTime : DateTime) xml =
+        XElement.Parse(xml) 
+        |> removeNamespaces
+        |> preprocessXml containerName eventSourceId
+        |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.None, true) |> JObject.Parse)
+        |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i eventTime publicationTime x)
+        |> List.map (fun x -> extractCoordinates containerName x)
+        |> List.map (fun (json, coordinates) -> (json, coordinates, eventSourceId, eventTime))
+
+    let getEventXmlAndConvertToJson (entity : Table.DynamicTableEntity) (eventBlobContainer : Blob.CloudBlobContainer) containerName =
+        getBlobContent eventBlobContainer entity.PartitionKey entity.RowKey 
+        |> convertXmlToJson containerName entity.PartitionKey 
+            (Utils.rowKeyToTime entity.RowKey) 
+            (entity.Properties.["PublicationTime"].DateTime).Value

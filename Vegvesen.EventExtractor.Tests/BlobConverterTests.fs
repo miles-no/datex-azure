@@ -7,6 +7,8 @@ open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 open NUnit.Framework
 open FsUnit
+
+open Vegvesen.Model
 open Vegvesen.EventExtractor
 
 module BlobConverterTests =

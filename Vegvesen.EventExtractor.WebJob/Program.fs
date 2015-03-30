@@ -6,6 +6,8 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.WindowsAzure.Storage
 open Microsoft.Azure.WebJobs
+
+open Vegvesen.Model
 open Vegvesen.EventExtractor
 
 module WebJob =

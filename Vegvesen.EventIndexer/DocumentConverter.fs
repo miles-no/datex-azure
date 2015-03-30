@@ -1,4 +1,4 @@
-﻿namespace Vegvesen.EventExtractor
+﻿namespace Vegvesen.EventIndexer
 
 open System
 open System.Collections.Generic
@@ -11,26 +11,14 @@ open Microsoft.Azure.Documents.Client
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open Vegvesen.Model
+open Vegvesen.EventExtractor
+
 [<AutoOpen>]
 module DocumentConverter =
 
     [<Literal>]
     let PublicationTimeElementName = "PublicationTime"
-
-    let convertXmlToJson containerName eventSourceId (eventTime : DateTime) (publicationTime : DateTime) xml =
-        XElement.Parse(xml) 
-        |> removeNamespaces
-        |> preprocessXml containerName eventSourceId
-        |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.None, true) |> JObject.Parse)
-        |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i eventTime publicationTime x)
-        |> List.map (fun x -> extractCoordinates containerName x)
-        |> List.map (fun (json, coordinates) -> (json, coordinates, eventSourceId, eventTime))
-
-    let getEventXmlAndConvertToJson (entity : Table.DynamicTableEntity) (eventBlobContainer : Blob.CloudBlobContainer) containerName =
-        getBlobContent eventBlobContainer entity.PartitionKey entity.RowKey 
-        |> convertXmlToJson containerName entity.PartitionKey 
-            (Utils.rowKeyToTime entity.RowKey) 
-            (entity.Properties.["PublicationTime"].DateTime).Value
 
     let populateEventDocumentStore (account : AccountInfo) containerName maxEventCount =
         let table = account.EventXmlTableClient.GetTableReference(containerName)
@@ -46,7 +34,7 @@ module DocumentConverter =
             |> Seq.concat
             |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
                 saveEventAsJsonToDocumentStore account.EventDocumentClient containerName json
-                let (eventSourceId, timeId) = parseDocumentId json
+                let (eventSourceId, timeId) = Utils.parseJsonId json
                 match coordinates with
                 | None -> ()
                 | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
@@ -66,7 +54,7 @@ module DocumentConverter =
             |> Seq.concat
             |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
                 saveEventAsJsonToBlobStore jsonBlobContainer containerName json
-                let (eventSourceId, timeId) = parseDocumentId json
+                let (eventSourceId, timeId) = Utils.parseJsonId json
                 match coordinates with
                 | None -> ()
                 | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)

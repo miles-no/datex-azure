@@ -10,7 +10,10 @@ open Microsoft.Azure.Documents.Client
 open Microsoft.Azure.Documents.Linq
 open NUnit.Framework
 open FsUnit
+
+open Vegvesen.Model
 open Vegvesen.EventExtractor
+open Vegvesen.EventIndexer
 
 module DocumentDBTests =
 

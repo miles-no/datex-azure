@@ -6,6 +6,8 @@ open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
 
+open Vegvesen.Model
+
 [<AutoOpen>]
 module TableStorage =
 

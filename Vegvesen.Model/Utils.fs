@@ -1,9 +1,11 @@
-﻿namespace Vegvesen.EventExtractor
+﻿namespace Vegvesen.Model
 
 open System
 open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 module Utils =
 
@@ -20,4 +22,11 @@ module Utils =
         let splitPos = documentId.LastIndexOf '_'
         let eventSourceId = documentId.Substring(0, splitPos-1)
         let timeId = documentId.Substring(splitPos+1)
+        (eventSourceId, timeId)
+
+    let parseJsonId (json : JObject) =
+        let id = json.["id"].ToString()
+        let pos = id.LastIndexOf('_')
+        let eventSourceId = id.Substring(0, pos)
+        let timeId = id.Substring(pos + 1)
         (eventSourceId, timeId)

@@ -1,4 +1,4 @@
-﻿namespace Vegvesen.EventExtractor
+﻿namespace Vegvesen.Model
 
 open System
 open System.Configuration
