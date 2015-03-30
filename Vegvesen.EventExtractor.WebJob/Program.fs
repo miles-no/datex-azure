@@ -10,16 +10,10 @@ open Vegvesen.EventExtractor
 
 module WebJob =
 
-    let getStorageAccounts =
-        let sourceAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings.Item("AzureWebJobsStorage").ConnectionString)
-        let eventAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings.Item("VegvesenEventStorage").ConnectionString)
-        (sourceAccount, eventAccount)
-
     [<EntryPoint>]
     let main argv = 
 
-        let (sourceAccount, eventAccount) = getStorageAccounts
-
+        let account = AccountInfo()
         let tasks = List<Task>()
 
         for containerName in blobContainers do
@@ -27,7 +21,7 @@ module WebJob =
                 let containerName = containerName.ToLower()
                 match containerName with
                 | "getcctvsitetable" -> () // skip CCTV events, nothing interesting
-                | _ -> updateServiceEvents sourceAccount eventAccount containerName 10
+                | _ -> updateServiceEvents account containerName 10
             with
             | ex -> printfn "Error while processing events for %s: %s" containerName ex.Message
         0
