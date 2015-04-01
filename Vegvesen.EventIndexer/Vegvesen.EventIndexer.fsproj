@@ -54,6 +54,21 @@
     <Compile Include="DocumentStorage.fs" />
     <Compile Include="ElasticStorage.fs" />
     <Compile Include="Indexer.fs" />
+    <None Include="getmeasuredweatherdata.index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="getmeasurementweathersitetable.index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="getpredefinedtraveltimelocations.index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="getsituation.index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gettraveltimedata.index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Elasticsearch.Net">
@@ -102,8 +117,6 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Vegvesen.EventExtractor\Vegvesen.EventExtractor.fsproj">
       <Name>Vegvesen.EventExtractor</Name>
       <Project>{3a59f8a4-185c-4144-baff-a71d94ec7e4b}</Project>

@@ -1,0 +1,29 @@
+﻿{
+    "settings": {
+        "index": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        }
+    },
+    "mappings": {
+        "getmeasurementweathersitetable": {
+            "properties": {
+                "measurementSiteLocation": {
+                    "type": "nested",
+                    "properties": {
+                        "pointByCoordinates": {
+                            "type": "nested",
+                            "properties": { 
+                                "pointCoordinates": {
+                                    "type": "geo_point",
+                                    "lat_lon": true,
+                                    "geohash": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -22,6 +22,15 @@ module ElasticsearchTests =
     [<TestCase("getpredefinedtraveltimelocations")>]
     [<TestCase("getsituation")>]
     [<TestCase("gettraveltimedata")>]
+    let ``should create Elasticsearch index with mappings`` (containerName) =
+        let account = AccountInfo()
+        createElasticStoreIndex account containerName
+
+    [<TestCase("getmeasurementweathersitetable")>]
+    [<TestCase("getmeasuredweatherdata")>]
+    [<TestCase("getpredefinedtraveltimelocations")>]
+    [<TestCase("getsituation")>]
+    [<TestCase("gettraveltimedata")>]
     let ``should populate Elasticsearch with first JSON document`` (containerName) =
         let account = AccountInfo()
         populateEventJsonStore account containerName 1 saveEventAsJsonToElasticStore

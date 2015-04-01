@@ -1,0 +1,25 @@
+﻿{
+    "settings": {
+        "index": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        }
+    },
+    "mappings": {
+        "getsituation": {
+            "properties": {
+                "groupOfLocations": {
+                    "type": "nested",
+                    "properties": {
+                        "locationForDisplay": {
+                            "type": "geo_point",
+                            "lat_lon": true,
+                            "geohash": true
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

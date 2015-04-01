@@ -37,7 +37,7 @@ module JsonConverter =
 
     let extractCoordinates containerName (json : JObject) =
 
-        let rec flattenProperties (json : JObject) =
+        let rec flattenProperties (json : JToken) =
             seq {
                 for x in json do
                     match x with
@@ -47,6 +47,9 @@ module JsonConverter =
                         | y when (y :? JObject) ->
                             yield prop
                             yield! flattenProperties (y :?> JObject)
+                        | y when (y :? JArray) ->
+                            yield prop
+                            yield! flattenProperties (y :?> JArray)
                         | y when (y :? JValue) ->                    
                             yield prop
                         | _ -> ()
@@ -69,6 +72,56 @@ module JsonConverter =
             | None -> (json, None)
         | _ -> (json, None)
 
+    let (|Bool|Int|Float|Date|String|) s = 
+        match System.Boolean.TryParse s with
+        | true, v -> Bool v
+        | _ ->
+        match System.Int64.TryParse s with
+        | true, v -> Int v
+        | _ ->
+        match System.Double.TryParse s with
+        | true, v -> Float v
+        | _ ->
+        match System.DateTime.TryParse s with
+        | true, v -> Date v
+        | _ -> String s
+
+    let rec transform (rename: string -> string) (remove: string -> bool) (changeType : JToken -> JToken) (json: JToken) =
+        match json with
+        | :? JProperty as prop -> 
+            let name = rename prop.Name
+            let value = changeType prop.Value
+            let cont = transform rename remove changeType value
+            new JProperty(name, cont :> obj) :> JToken
+        | :? JArray as arr ->
+            let cont = arr |> Seq.map (transform rename remove changeType)
+            new JArray(cont) :> JToken
+        | :? JObject as o ->
+            let cont = o.Properties() |> Seq.filter (fun p -> not (remove p.Name)) |> Seq.map (transform rename remove changeType)
+            new JObject(cont) :> JToken
+        | _ -> json
+
+    let mapPropertyName propName =
+        match propName with
+        | "latitude" -> "lat"
+        | "longitude" -> "lon"
+        | _ -> propName
+
+    let shouldRemoveProperty propName =
+        match propName with
+        | "@xmlns" -> true
+        | _ -> false
+
+    let changePropertyType (value : JToken) =
+        match value with
+        | :? JValue as jval ->
+            match (jval.Value.ToString()) with
+            | Bool v -> JValue(v) :> JToken
+            | Int v -> JValue(v) :> JToken
+            | Float v -> JValue(v) :> JToken
+            | _ -> value
+        | _ -> value
+
     let postprocessJson containerName eventSourceId index (eventTime : DateTime) (publicationTime : DateTime) (json : JObject) =
         let id = match containerName with
                     | "getsituation" -> sprintf "%s_%d" eventSourceId (index+1)
@@ -76,7 +129,7 @@ module JsonConverter =
         json.AddFirst(JProperty("publicationTime", publicationTime))
         json.AddFirst(JProperty("id", sprintf "%s_%s" id (Utils.timeToId eventTime)))
         convertCoordinates json
-        json
+        json |> transform mapPropertyName shouldRemoveProperty changePropertyType :?> JObject
 
     let convertXmlToJson containerName eventSourceId (eventTime : DateTime) (publicationTime : DateTime) xml =
         XElement.Parse(xml) 
