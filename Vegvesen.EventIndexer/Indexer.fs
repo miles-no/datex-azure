@@ -12,22 +12,22 @@ open Vegvesen.EventExtractor
 [<AutoOpen>]
 module Indexer =
 
-    let populateEventJsonStore (account : AccountInfo) containerName maxEventCount (writeJsonToStore : AccountInfo -> string -> JObject -> unit) =
+    let populateEventJsonStore (account : AccountInfo) containerName
+            (getEvents : (Table.CloudTable -> seq<Table.DynamicTableEntity>)) 
+            (writeJsonToStore : AccountInfo -> string -> JObject -> unit) =
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
         let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-coordinates")
 
-        printfn "Populating up to %d events, container %s" maxEventCount containerName
+        printfn "Populating events from container %s" containerName
 
-        let query = Table.TableQuery<Table.DynamicTableEntity>()
-        table.ExecuteQuery(query) 
-            |> Seq.truncate maxEventCount
+        table
+            |> getEvents
             |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
             |> Seq.concat
             |> Seq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
-                writeJsonToStore account containerName json
-                let (eventSourceId, timeId) = Utils.parseJsonId json
-                match coordinates with
-                | None -> ()
-                | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
-
+                writeJsonToStore account containerName json)
+//                let (eventSourceId, timeId) = Utils.parseJsonId json
+//                match coordinates with
+//                | None -> ()
+//                | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)

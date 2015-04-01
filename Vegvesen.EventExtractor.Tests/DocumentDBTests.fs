@@ -4,6 +4,7 @@ open System
 open System.Configuration
 open System.Threading.Tasks
 open Microsoft.FSharp.Collections
+open Microsoft.WindowsAzure.Storage
 open Microsoft.Azure.Documents
 open Microsoft.Azure.Documents.Client
 open Microsoft.Azure.Documents.Linq
@@ -23,7 +24,11 @@ module DocumentDBTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate DocumentDB with first JSON document`` (containerName) =
         let account = AccountInfo()
-        populateEventJsonStore account containerName 1 saveEventAsJsonToDocumentStore
+        let getEvents (table : Table.CloudTable) = 
+            let query = Table.TableQuery<Table.DynamicTableEntity>()
+            table.ExecuteQuery(query) |> Seq.truncate 1
+
+        populateEventJsonStore account containerName getEvents saveEventAsJsonToDocumentStore
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -32,7 +37,11 @@ module DocumentDBTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate DocumentDB with 1000 JSON documents`` (containerName) =
         let account = AccountInfo()
-        populateEventJsonStore account containerName 1000 saveEventAsJsonToDocumentStore
+        let getEvents (table : Table.CloudTable) = 
+            let query = Table.TableQuery<Table.DynamicTableEntity>()
+            table.ExecuteQuery(query) |> Seq.truncate 1000
+
+        populateEventJsonStore account containerName getEvents saveEventAsJsonToDocumentStore
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
