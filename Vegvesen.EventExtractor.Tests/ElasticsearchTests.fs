@@ -37,7 +37,8 @@ module ElasticsearchTests =
             let query = Table.TableQuery<Table.DynamicTableEntity>()
             table.ExecuteQuery(query) |> Seq.truncate 1
 
-        populateEventJsonStore account containerName getEvents saveEventAsJsonToElasticStore
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -50,34 +51,48 @@ module ElasticsearchTests =
             let query = Table.TableQuery<Table.DynamicTableEntity>()
             table.ExecuteQuery(query) |> Seq.truncate 1
 
-        populateEventJsonStore account containerName getEvents saveEventAsJsonToElasticStore
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
 
-    [<TestCase("getmeasurementweathersitetable", "2014-12-31", "2015-01-01")>]
-    [<TestCase("getmeasuredweatherdata", "2014-12-31", "2015-01-01")>]
-    [<TestCase("getpredefinedtraveltimelocations", "2014-12-31", "2015-01-01")>]
-    [<TestCase("getsituation", "2014-12-31", "2015-01-01")>]
-    [<TestCase("gettraveltimedata", "2014-12-31", "2015-01-01")>]
-    let ``should populate Elasticsearch with JSON documents for the selected date interval`` (containerName, fromDate, toDate) =
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
+
+    [<Literal>]
+    let FromDate = "2015-01-01"
+    [<Literal>]
+    let ToDate = "2015-04-01"
+
+    [<TestCase("getmeasurementweathersitetable", FromDate, ToDate, 1)>]
+    [<TestCase("getmeasuredweatherdata", FromDate, ToDate, 10)>]
+    [<TestCase("getpredefinedtraveltimelocations", FromDate, ToDate, 1)>]
+    [<TestCase("getsituation", "2015-01-01", "2015-04-01", 10)>]
+    [<TestCase("gettraveltimedata", FromDate, ToDate, 10)>]
+    let ``should populate Elasticsearch with JSON documents for the selected date interval`` (containerName, fromDate, toDate, n) =
         let account = AccountInfo()
 
         let fromKey = Utils.timeToRowKey ((DateTime.Parse toDate).AddDays(1.))
         let toKey = Utils.timeToRowKey (DateTime.Parse fromDate)
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
 
-        let getEvents (table : Table.CloudTable) =
-            let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
-            let query = Table.TableQuery<Table.DynamicTableEntity>()
-            query.FilterString <- sprintf "PartitionKey eq '%s'" containerName
-            let ids = idtable.ExecuteQuery(query) |> Seq.toList
-            printfn "Found %d ids" (List.length ids)
-            ids
-            |> Seq.map (fun x -> x.RowKey)
-            |> Seq.map (fun id -> 
-                        let query = Table.TableQuery<Table.DynamicTableEntity>()
-                        query.FilterString <- sprintf "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
-                            id fromKey toKey
-                        let results = table.ExecuteQuery(query) |> Seq.toList
-                        printfn "Found %d results for id %s" (List.length results) id
-                        results)
-            |> Seq.concat
+        let takeEachNth n xs =
+            xs 
+            |> Seq.mapi (fun i x -> (i, x)) 
+            |> Seq.filter (fun (i, x) -> i % n = 0)
+            |> Seq.map (fun (i, x) -> x) 
 
-        populateEventJsonStore account containerName getEvents saveEventAsJsonToElasticStore
+        let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        query.FilterString <- sprintf "PartitionKey eq '%s'" containerName
+        let ids = idtable.ExecuteQuery(query)
+        printfn "Found %d ids" (Seq.length ids)
+        ids
+        |> Seq.map (fun x -> x.RowKey)
+        |> PSeq.iter (fun id -> 
+                    let query = Table.TableQuery<Table.DynamicTableEntity>()
+                    query.FilterString <- sprintf "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
+                        id fromKey toKey
+                    let results = table.ExecuteQuery(query)
+                    printfn "Found %d results for id %s" (Seq.length results) id
+                    populateEventJsonStore account containerName (results |> takeEachNth n) saveEventAsJsonToElasticStore)
+
+        

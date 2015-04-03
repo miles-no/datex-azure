@@ -49,6 +49,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Compile Include="pseq.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="CloudAccounts.fs" />
     <Content Include="packages.config" />

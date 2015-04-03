@@ -28,7 +28,8 @@ module DocumentDBTests =
             let query = Table.TableQuery<Table.DynamicTableEntity>()
             table.ExecuteQuery(query) |> Seq.truncate 1
 
-        populateEventJsonStore account containerName getEvents saveEventAsJsonToDocumentStore
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToDocumentStore
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -41,7 +42,8 @@ module DocumentDBTests =
             let query = Table.TableQuery<Table.DynamicTableEntity>()
             table.ExecuteQuery(query) |> Seq.truncate 1000
 
-        populateEventJsonStore account containerName getEvents saveEventAsJsonToDocumentStore
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToDocumentStore
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
