@@ -77,10 +77,10 @@ module BlobConverterTests =
         let account = getStorageAccounts
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
-        let query = Table.TableQuery<Table.DynamicTableEntity>()
-        table.ExecuteQuery(query) 
-            |> Seq.groupBy (fun x -> x.PartitionKey) 
-            |> Seq.iter (fun (x,_) -> 
-                let entity = Table.DynamicTableEntity(containerName, x)
-                let operation = Table.TableOperation.InsertOrReplace(entity)
-                idtable.Execute(operation) |> ignore)
+        table 
+        |> getAllTableEntities
+        |> Seq.groupBy (fun x -> x.PartitionKey) 
+        |> Seq.iter (fun (x,_) -> 
+            let entity = Table.DynamicTableEntity(containerName, x)
+            let operation = Table.TableOperation.InsertOrReplace(entity)
+            idtable.Execute(operation) |> ignore)

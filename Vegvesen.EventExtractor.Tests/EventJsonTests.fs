@@ -45,7 +45,10 @@ module EventJsonTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate blob storage with first JSON document`` (containerName) =
         let account = AccountInfo()
-        populateEventBlobStore account containerName 1
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let getEvents (table : Table.CloudTable) = 
+            table |> getAllTableEntities |> Seq.truncate 1
+        populateEventBlobStore account containerName (getEvents table)
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -54,4 +57,7 @@ module EventJsonTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate blob storage with 100 JSON documents`` (containerName) =
         let account = AccountInfo()
-        populateEventBlobStore account containerName 100
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let getEvents (table : Table.CloudTable) = 
+            table |> getAllTableEntities |> Seq.truncate 100
+        populateEventBlobStore account containerName (getEvents table)

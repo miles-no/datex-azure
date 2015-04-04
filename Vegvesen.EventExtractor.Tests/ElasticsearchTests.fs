@@ -34,8 +34,7 @@ module ElasticsearchTests =
     let ``should populate Elasticsearch with first JSON document`` (containerName) =
         let account = AccountInfo()
         let getEvents (table : Table.CloudTable) = 
-            let query = Table.TableQuery<Table.DynamicTableEntity>()
-            table.ExecuteQuery(query) |> Seq.truncate 1
+            table |> getAllTableEntities |> Seq.truncate 1
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
@@ -48,8 +47,7 @@ module ElasticsearchTests =
     let ``should populate Elasticsearch with 1000 JSON documents`` (containerName) =
         let account = AccountInfo()
         let getEvents (table : Table.CloudTable) = 
-            let query = Table.TableQuery<Table.DynamicTableEntity>()
-            table.ExecuteQuery(query) |> Seq.truncate 1
+            table |> getAllTableEntities |> Seq.truncate 1
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
@@ -81,18 +79,15 @@ module ElasticsearchTests =
             |> Seq.map (fun (i, x) -> x) 
 
         let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
-        let query = Table.TableQuery<Table.DynamicTableEntity>()
-        query.FilterString <- sprintf "PartitionKey eq '%s'" containerName
-        let ids = idtable.ExecuteQuery(query)
+        let ids = getTableEntitiesByQuery idtable <| sprintf "PartitionKey eq '%s'" containerName
         printfn "Found %d ids" (Seq.length ids)
         ids
         |> Seq.map (fun x -> x.RowKey)
         |> PSeq.iter (fun id -> 
-                    let query = Table.TableQuery<Table.DynamicTableEntity>()
-                    query.FilterString <- sprintf "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
-                        id fromKey toKey
-                    let results = table.ExecuteQuery(query)
-                    printfn "Found %d results for id %s" (Seq.length results) id
-                    populateEventJsonStore account containerName (results |> takeEachNth n) saveEventAsJsonToElasticStore)
+            let results = getTableEntitiesByQuery table <| sprintf 
+                            "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
+                            id fromKey toKey
+            printfn "Found %d results for id %s" (Seq.length results) id
+            populateEventJsonStore account containerName (results |> takeEachNth n) saveEventAsJsonToElasticStore)
 
         

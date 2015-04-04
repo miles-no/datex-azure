@@ -25,8 +25,7 @@ module DocumentDBTests =
     let ``should populate DocumentDB with first JSON document`` (containerName) =
         let account = AccountInfo()
         let getEvents (table : Table.CloudTable) = 
-            let query = Table.TableQuery<Table.DynamicTableEntity>()
-            table.ExecuteQuery(query) |> Seq.truncate 1
+            table |> getAllTableEntities |> Seq.truncate 1
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToDocumentStore
@@ -39,8 +38,7 @@ module DocumentDBTests =
     let ``should populate DocumentDB with 1000 JSON documents`` (containerName) =
         let account = AccountInfo()
         let getEvents (table : Table.CloudTable) = 
-            let query = Table.TableQuery<Table.DynamicTableEntity>()
-            table.ExecuteQuery(query) |> Seq.truncate 1000
+            table |> getAllTableEntities |> Seq.truncate 1000
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToDocumentStore

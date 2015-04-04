@@ -31,3 +31,14 @@ module TableStorage =
         let entity = Table.DynamicTableEntity(containerName, id)
         let operation = Table.TableOperation.InsertOrReplace(entity)
         idTable.Execute(operation) |> ignore
+
+    let executeTableQuery (table : Table.CloudTable) (query : Table.TableQuery<Table.DynamicTableEntity>) =
+        table.ExecuteQuery(query)
+
+    let getTableEntitiesByQuery (table : Table.CloudTable) queryString =
+        let query = Table.TableQuery<Table.DynamicTableEntity>()
+        query.FilterString <- queryString
+        executeTableQuery table query
+
+    let getAllTableEntities (table : Table.CloudTable) =
+        executeTableQuery table (Table.TableQuery<Table.DynamicTableEntity>())

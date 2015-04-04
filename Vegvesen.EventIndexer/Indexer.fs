@@ -17,19 +17,19 @@ module Indexer =
             (events : seq<Table.DynamicTableEntity>) 
             (writeJsonToStore : AccountInfo -> string -> JObject -> unit) =
         let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
-        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-coordinates")
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
 
         printfn "Populating events from container %s" containerName
 
         events
-            |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
-            |> Seq.concat
-            |> PSeq.iter (fun (json, coordinates, eventSourceId, eventTime) ->
-                try
-                    writeJsonToStore account containerName json
+        |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
+        |> Seq.concat
+        |> PSeq.iter (fun (json, coordinates, eventSourceId, eventTime) ->
+            try
+                writeJsonToStore account containerName json
 //                    let (eventSourceId, timeId) = Utils.parseJsonId json
 //                    match coordinates with
 //                    | None -> ()
 //                    | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
-                with
-                | ex -> printfn "%s" ex.Message)
+            with
+            | ex -> printfn "%s" ex.Message)
