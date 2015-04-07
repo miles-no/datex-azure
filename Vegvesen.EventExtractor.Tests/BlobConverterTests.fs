@@ -78,7 +78,8 @@ module BlobConverterTests =
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
         table 
-        |> getAllTableEntities
+        |> getAllTableEntitiesAsync 
+        |> Async.RunSynchronously
         |> Seq.groupBy (fun x -> x.PartitionKey) 
         |> Seq.iter (fun (x,_) -> 
             let entity = Table.DynamicTableEntity(containerName, x)

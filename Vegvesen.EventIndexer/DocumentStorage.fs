@@ -51,6 +51,12 @@ module DocumentStorage =
         |> insertDocument document 
         |> ignore
 
+    let saveEventAsJsonToDocumentStoreAsync (account : AccountInfo) containerName (document : JObject) =
+        // TODO
+        async {
+            saveEventAsJsonToDocumentStore account containerName document
+        }
+
     let loadDocumentAttachments (account : AccountInfo) containerName (document : Document) =
         match containerName with
         | "getsituation" | "getpredefinedtraveltimelocations" -> 

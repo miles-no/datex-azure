@@ -26,3 +26,16 @@ module ElasticStorage =
     let saveEventAsJsonToElasticStore (account : AccountInfo) containerName (document : JObject) =
         let id = document.["id"].ToString()
         account.EventElasticClient.Index(containerName, containerName, id, document.ToString()) |> validateResponse
+
+//    let saveEventAsJsonToElasticStoreAsync (account : AccountInfo) containerName (document : JObject) =
+//        let id = document.["id"].ToString()
+//        async {
+//            let! response = account.EventElasticClient.IndexAsync(containerName, containerName, id, document.ToString()) 
+//                                |> Async.AwaitTask
+//            response |> validateResponse
+//        }
+
+    let saveEventAsJsonToElasticStoreAsync (account : AccountInfo) containerName (document : JObject) =
+        async {
+            do saveEventAsJsonToElasticStore account containerName document
+        }

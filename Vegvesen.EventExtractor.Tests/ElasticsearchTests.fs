@@ -33,11 +33,13 @@ module ElasticsearchTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate Elasticsearch with first JSON document`` (containerName) =
         let account = AccountInfo()
-        let getEvents (table : Table.CloudTable) = 
-            table |> getAllTableEntities |> Seq.truncate 1
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
+        populateEventJsonStoreAsync 
+            account containerName 
+            (getAllTableEntitiesAsync table) (Seq.truncate 1) 
+            saveEventAsJsonToElasticStoreAsync
+        |> Async.RunSynchronously
 
     [<TestCase("getmeasurementweathersitetable")>]
     [<TestCase("getmeasuredweatherdata")>]
@@ -46,14 +48,13 @@ module ElasticsearchTests =
     [<TestCase("gettraveltimedata")>]
     let ``should populate Elasticsearch with 1000 JSON documents`` (containerName) =
         let account = AccountInfo()
-        let getEvents (table : Table.CloudTable) = 
-            table |> getAllTableEntities |> Seq.truncate 1
 
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
-
-        let table = account.EventXmlTableClient.GetTableReference(containerName)
-        populateEventJsonStore account containerName (getEvents table) saveEventAsJsonToElasticStore
+        populateEventJsonStoreAsync 
+            account containerName 
+            (getAllTableEntitiesAsync table) (Seq.truncate 1000) 
+            saveEventAsJsonToElasticStoreAsync
+        |> Async.RunSynchronously
 
     [<Literal>]
     let FromDate = "2015-01-01"
@@ -79,15 +80,18 @@ module ElasticsearchTests =
             |> Seq.map (fun (i, x) -> x) 
 
         let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
-        let ids = getTableEntitiesByQuery idtable <| sprintf "PartitionKey eq '%s'" containerName
+        let ids = getTableEntitiesByQueryAsync idtable <| sprintf "PartitionKey eq '%s'" containerName
+                |> Async.RunSynchronously
         printfn "Found %d ids" (Seq.length ids)
         ids
         |> Seq.map (fun x -> x.RowKey)
-        |> PSeq.iter (fun id -> 
-            let results = getTableEntitiesByQuery table <| sprintf 
-                            "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
-                            id fromKey toKey
-            printfn "Found %d results for id %s" (Seq.length results) id
-            populateEventJsonStore account containerName (results |> takeEachNth n) saveEventAsJsonToElasticStore)
-
-        
+        |> Seq.map (fun id -> 
+            let getEventsAsync = getTableEntitiesByQueryAsync table <| sprintf 
+                                    "PartitionKey eq '%s' and RowKey ge '%s' and RowKey lt '%s'" 
+                                    id fromKey toKey
+            populateEventJsonStoreAsync 
+                account containerName 
+                getEventsAsync (takeEachNth n) 
+                saveEventAsJsonToElasticStoreAsync)
+        |> Async.Parallel
+        |> Async.RunSynchronously

@@ -54,3 +54,9 @@ module BlobStorage =
     let getBlobContent (container : Blob.CloudBlobContainer) eventSourceId timestampId =
         let blob = container.GetBlockBlobReference(eventSourceId + "/" + timestampId)
         blob.DownloadText()
+
+    let getBlobContentAsync (container : Blob.CloudBlobContainer) eventSourceId timestampId =
+        let blob = container.GetBlockBlobReference(eventSourceId + "/" + timestampId)
+        async {
+            return! blob.DownloadTextAsync() |> Async.AwaitTask
+        }
