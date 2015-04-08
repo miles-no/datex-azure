@@ -21,7 +21,7 @@ module EventJsonTests =
     let ``should convert XML to JSON`` (containerName) =
         let account = AccountInfo()
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        let blobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let blobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
 
         let blobDir = blobContainer.ListBlobs() 
                         |> Seq.skipWhile (fun x -> not(x :? Blob.CloudBlobDirectory)) 

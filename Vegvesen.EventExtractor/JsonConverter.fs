@@ -140,17 +140,6 @@ module JsonConverter =
         |> List.map (fun x -> extractCoordinates containerName x)
         |> List.map (fun (json, coordinates) -> (json, coordinates, eventSourceId, eventTime))
 
-    let convertXmlToJsonAsync containerName eventSourceId (eventTime : DateTime) (publicationTime : DateTime) xml =
-        async {
-            return XElement.Parse(xml) 
-            |> removeNamespaces
-            |> preprocessXml containerName eventSourceId
-            |> List.map (fun x -> JsonConvert.SerializeXNode(x, Formatting.None, true) |> JObject.Parse)
-            |> List.mapi (fun i x -> postprocessJson containerName eventSourceId i eventTime publicationTime x)
-            |> List.map (fun x -> extractCoordinates containerName x)
-            |> List.map (fun (json, coordinates) -> (json, coordinates, eventSourceId, eventTime))
-        }
-
     let getEventXmlAndConvertToJson (entity : Table.DynamicTableEntity) (eventBlobContainer : Blob.CloudBlobContainer) containerName =
         getBlobContent eventBlobContainer entity.PartitionKey entity.RowKey 
         |> convertXmlToJson containerName entity.PartitionKey 
@@ -160,7 +149,7 @@ module JsonConverter =
     let getEventXmlAndConvertToJsonAsync (entity : Table.DynamicTableEntity) (eventBlobContainer : Blob.CloudBlobContainer) containerName =
         async {
             let! blob = (getBlobContentAsync eventBlobContainer entity.PartitionKey entity.RowKey)
-            return! blob |> convertXmlToJsonAsync containerName entity.PartitionKey 
+            return blob |> convertXmlToJson containerName entity.PartitionKey 
                         (Utils.rowKeyToTime entity.RowKey) 
                         (entity.Properties.["PublicationTime"].DateTime).Value
         }

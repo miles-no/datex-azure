@@ -24,7 +24,7 @@ module BlobConverterTests =
 
         let sourceBlobContainer = account.SourceXmlBlobClient.GetContainerReference(containerName)
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
 
         if clearContainers then
             table.DeleteIfExists() |> ignore

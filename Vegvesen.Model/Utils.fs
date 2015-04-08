@@ -9,6 +9,15 @@ open Newtonsoft.Json.Linq
 
 module Utils =
 
+    let getXmlEventsContainerName (baseContainerName : string) =
+        baseContainerName + "-events"
+
+    let getJsonEventsContainerName (baseContainerName : string) =
+        baseContainerName + "-events-json"
+
+    let getJsonCoordinatesContainerName (baseContainerName : string) =
+        baseContainerName + "-events-json-coordinates"
+
     let timeToRowKey (time : DateTime) =
         (DateTime.MaxValue.Ticks - time.Ticks + 1L).ToString("d19")
 

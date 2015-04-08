@@ -18,7 +18,7 @@ module StorageMeasurments =
 
         let sourceBlobContainer = account.SourceXmlBlobClient.GetContainerReference(containerName)
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
 
         (sourceBlobContainer, table, eventBlobContainer)
 

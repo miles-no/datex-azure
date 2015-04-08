@@ -4,7 +4,6 @@ open System
 open System.IO
 open Microsoft.FSharp.Collections
 open Microsoft.WindowsAzure.Storage
-open FSharpx.Control
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
@@ -70,7 +69,7 @@ module BlobConverter =
         let sourceBlobContainer = account.SourceXmlBlobClient.GetContainerReference(containerName)
         let table = account.EventXmlTableClient.GetTableReference(containerName)
         table.CreateIfNotExists() |> ignore
-        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
         eventBlobContainer.CreateIfNotExists() |> ignore
         let idtable = account.EventXmlTableClient.GetTableReference("eventoriginids")
 
@@ -120,32 +119,34 @@ module BlobConverter =
         blob.Properties.ContentType <-"application/json"
         blob.UploadText(json.ToString(Formatting.None))
 
-//    let populateEventBlobStore (account : AccountInfo) containerName
-//            (events : seq<Table.DynamicTableEntity>) =
-//        let table = account.EventXmlTableClient.GetTableReference(containerName)
-//        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
-//        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(containerName + "-events-json")
-//        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
-//
-//        printfn "Populating events from container %s" containerName
-//
-//        events
-//        |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
-//        |> Seq.concat
-//        |> PSeq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
-//            saveEventAsJsonToBlobStore jsonBlobContainer containerName json
-//            let (eventSourceId, timeId) = Utils.parseJsonId json
-//            match coordinates with
-//            | None -> ()
-//            | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
+#if SYNC
+    let populateEventBlobStore (account : AccountInfo) containerName
+            (events : seq<Table.DynamicTableEntity>) =
+        let table = account.EventXmlTableClient.GetTableReference(containerName)
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
+        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(Utils.getJsonEventsContainerName containerName)
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(Utils.getJsonCoordinatesContainerName containerName)
+
+        printfn "Populating events from container %s" containerName
+
+        events
+        |> Seq.map (fun x -> getEventXmlAndConvertToJson x eventBlobContainer containerName)
+        |> Seq.concat
+        |> PSeq.iter (fun (json, coordinates, eventSourceId, eventTime) -> 
+            saveEventAsJsonToBlobStore jsonBlobContainer containerName json
+            let (eventSourceId, timeId) = Utils.parseJsonId json
+            match coordinates with
+            | None -> ()
+            | Some(coordinates) -> saveEventCoordinatesAsJsonToBlobStore coordBlobContainer coordinates eventSourceId eventTime)
+#endif
 
     let populateEventBlobStoreAsync (account : AccountInfo) containerName
             (events : Async<seq<Table.DynamicTableEntity>>) 
             (eventFilter : seq<Table.DynamicTableEntity> -> seq<Table.DynamicTableEntity>) =
         let table = account.EventXmlTableClient.GetTableReference(containerName)
-        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(containerName + "-events")
-        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(containerName + "-events-json")
-        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(containerName + "-events-json-coordinates")
+        let eventBlobContainer = account.EventXmlBlobClient.GetContainerReference(Utils.getXmlEventsContainerName containerName)
+        let jsonBlobContainer = account.EventJsonBlobClient.GetContainerReference(Utils.getJsonEventsContainerName containerName)
+        let coordBlobContainer = account.CoordinateJsonBlobClient.GetContainerReference(Utils.getJsonCoordinatesContainerName containerName)
 
         printfn "Populating events from container %s" containerName
 
