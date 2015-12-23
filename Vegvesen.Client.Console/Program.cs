@@ -19,11 +19,11 @@ namespace Vegvesen.Client.Console
         {
             ConnectionString = ConfigurationManager.ConnectionStrings["VegvesenDatex"].ConnectionString;
 
-            foreach (var serviceUrl in VegvesenClient.ServiceUrls)
+            foreach (var serviceUrl in VegvesenClient.ServiceUrls.Values)
             {
                 RequestAsync(serviceUrl);
 
-                Task.Delay(60000 / VegvesenClient.ServiceUrls.Length).Wait();
+                Task.Delay(60000 / VegvesenClient.ServiceUrls.Count).Wait();
             }
 
             System.Console.ReadKey();

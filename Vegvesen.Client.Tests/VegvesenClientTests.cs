@@ -22,7 +22,7 @@ namespace Vegvesen.Client.Tests
         public async Task GetSingleServiceDataAsString_SinceNull_ShouldReturnDataAndLastModified()
         {
             var client = new VegvesenClient(_connectionString);
-            var result = await client.GetDataAsStringAsync(VegvesenClient.ServiceUrls.First(), null);
+            var result = await client.GetDataAsStringAsync(GetAribitraryServiceUrl(), null);
 
             Assert.NotNull(result.Content);
             Assert.NotNull(result.LastModified);
@@ -32,7 +32,7 @@ namespace Vegvesen.Client.Tests
         public async Task GetSingleServiceDataAsStream_SinceNull_ShouldReturnDataAndLastModified()
         {
             var client = new VegvesenClient(_connectionString);
-            var result = await client.GetDataAsStreamAsync(VegvesenClient.ServiceUrls.First(), null);
+            var result = await client.GetDataAsStreamAsync(GetAribitraryServiceUrl(), null);
 
             Assert.NotNull(result.Content);
             Assert.NotNull(result.LastModified);
@@ -42,10 +42,10 @@ namespace Vegvesen.Client.Tests
         public async Task GetSingleServiceDataAsString_SinceLastFetch_ShouldReturnNoData()
         {
             var client = new VegvesenClient(_connectionString);
-            var result = await client.GetDataAsStringAsync(VegvesenClient.ServiceUrls.First(), null);
+            var result = await client.GetDataAsStringAsync(GetAribitraryServiceUrl(), null);
             var lastModified = result.LastModified;
 
-            result = await client.GetDataAsStringAsync(VegvesenClient.ServiceUrls.First(), lastModified);
+            result = await client.GetDataAsStringAsync(GetAribitraryServiceUrl(), lastModified);
             Assert.Null(result.Content);
             Assert.Equal(lastModified, result.LastModified);
         }
@@ -56,7 +56,7 @@ namespace Vegvesen.Client.Tests
             var client = new VegvesenClient(_connectionString);
 
             var sw = new Stopwatch();
-            foreach (var serviceUrl in VegvesenClient.ServiceUrls)
+            foreach (var serviceUrl in VegvesenClient.ServiceUrls.Values)
             {
                 sw.Start();
                 var sinceTime = DateTimeOffset.Now.AddMinutes(-1);
@@ -76,7 +76,7 @@ namespace Vegvesen.Client.Tests
             var client = new VegvesenClient(_connectionString);
 
             var sw = new Stopwatch();
-            foreach (var serviceUrl in VegvesenClient.ServiceUrls)
+            foreach (var serviceUrl in VegvesenClient.ServiceUrls.Values)
             {
                 sw.Start();
                 var result = await client.GetDataAsStreamAsync(serviceUrl, null);
@@ -88,6 +88,11 @@ namespace Vegvesen.Client.Tests
                 Console.WriteLine("{0}: last modified {1}, elapsed {2}",
                     serviceUrl, result.LastModified, sw.Elapsed);
             }
+        }
+
+        private string GetAribitraryServiceUrl()
+        {
+            return VegvesenClient.ServiceUrls.First().Value;
         }
     }
 }

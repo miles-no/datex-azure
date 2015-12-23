@@ -4,7 +4,6 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using Vegvesen.Client;
@@ -20,7 +19,7 @@ namespace Vegvesen.Web.Controllers
         // GET api/services
         public IEnumerable<string> Get()
         {
-            return VegvesenClient.ServiceUrls;
+            return VegvesenClient.ServiceUrls.Values;
         }
 
         // GET api/services/{name}
@@ -62,7 +61,7 @@ namespace Vegvesen.Web.Controllers
         private string GetServiceUrl(string serviceName)
         {
             return VegvesenClient.ServiceUrls.SingleOrDefault(
-                x => string.Equals(x, serviceName, StringComparison.InvariantCultureIgnoreCase));
+                x => string.Equals(x.Key, serviceName, StringComparison.InvariantCultureIgnoreCase)).Value;
         }
 
         private async Task<ServiceData> GetServiceDataAsync(string serviceName)

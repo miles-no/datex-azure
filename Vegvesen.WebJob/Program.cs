@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Vegvesen.Client;
@@ -11,6 +11,8 @@ namespace Vegvesen.WebJob
 {
     class Program
     {
+        private const bool LocalExection = false;
+
         static void Main()
         {
             var vegvesenConnectionString = ConfigurationManager.ConnectionStrings["VegvesenDatex"].ConnectionString;
@@ -19,17 +21,33 @@ namespace Vegvesen.WebJob
             var host = new JobHost();
 
             var tasks = new List<Task>();
-            foreach (var serviceUrl in VegvesenClient.ServiceUrls)
+            foreach (var service in VegvesenClient.ServiceUrls)
             {
-                tasks.Add(host.CallAsync(typeof(Functions).GetMethod("UpdateServiceDataAsync"),
-                    new
-                    {
-                        serviceConnectionString = vegvesenConnectionString,
-                        storageConnectionString = blobStorageConnectionString,
-                        serviceUrl = serviceUrl
-                    }));
+                if (LocalExection)
+                {
+                    var textWriter = new StreamWriter(".\\Test.txt");
+                    Functions.UpdateServiceDataAsync(
+                        textWriter,
+                        vegvesenConnectionString,
+                        blobStorageConnectionString,
+                        service.Key,
+                        service.Value).Wait();
+                }
+                else
+                {
+                    tasks.Add(host.CallAsync(typeof(Functions).GetMethod("UpdateServiceDataAsync"),
+                        new
+                        {
+                            serviceConnectionString = vegvesenConnectionString,
+                            storageConnectionString = blobStorageConnectionString,
+                            serviceName = service.Key,
+                            serviceUrl = service.Value,
+                        }));
+                }
             }
-            Task.WaitAll(tasks.ToArray());
+
+            if (tasks.Any())
+                Task.WaitAll(tasks.ToArray());
         }
     }
 }

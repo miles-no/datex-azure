@@ -30,3 +30,5 @@ Data/
 PublishScripts/
 ConnectionStrings.config
 Script.fsx
+Vegvesen.WebJob/Properties/PublishProfiles/milesdatexwebjob - FTP.pubxml
+Vegvesen.WebJob/Properties/PublishProfiles/milesdatexwebjob - Web Deploy.pubxml

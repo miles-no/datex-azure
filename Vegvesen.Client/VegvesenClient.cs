@@ -22,21 +22,21 @@ namespace Vegvesen.Client
 
     public class VegvesenClient
     {
-        private const string BaseUrl = "https://www.vegvesen.no/ws/datex/get/1/";
+        private const string BaseUrl = "https://www.vegvesen.no/ws/no/vegvesen/veg/trafikkpublikasjon/";
         private const string IfModifiedSinceHeader = "If-Modified-Since";
         private const string LastModifiedHeader = "Last-Modified";
 
         private readonly string _userName;
         private readonly string _password;
 
-        public static readonly string[] ServiceUrls =
+        public static Dictionary<string, string> ServiceUrls = new Dictionary<string, string>()
         {
-            "GetMeasurementWeatherSiteTable",
-            "GetMeasuredWeatherData",
-            "GetCCTVSiteTable",
-            "GetPredefinedTravelTimeLocations",
-            "GetTravelTimeData",
-            "GetSituation",
+            {"GetMeasurementWeatherSiteTable", BaseUrl + "vaer/1/GetMeasurementWeatherSiteTable"},
+            {"GetMeasuredWeatherData", BaseUrl + "vaer/1/GetMeasuredWeatherData"},
+            {"GetCCTVSiteTable", BaseUrl + "kamera/1/GetCCTVSiteTable"},
+            {"GetPredefinedTravelTimeLocations", BaseUrl + "reisetid/1/GetPredefinedTravelTimeLocations"},
+            {"GetTravelTimeData", BaseUrl + "reisetid/1/GetTravelTimeData"},
+            {"GetSituation", BaseUrl + "trafikk/1/GetSituation"},
         };
 
         public VegvesenClient(string connectionString)
@@ -65,7 +65,7 @@ namespace Vegvesen.Client
             return GetDataAsync<Stream>(serviceUrl, sinceTime);
         }
 
-        private async Task<Result<T>> GetDataAsync<T>(string serviceUrl, DateTimeOffset? sinceTime) 
+        private async Task<Result<T>> GetDataAsync<T>(string serviceUrl, DateTimeOffset? sinceTime)
             where T : class
         {
             var handler = new HttpClientHandler
@@ -75,7 +75,7 @@ namespace Vegvesen.Client
             };
 
             var client = new HttpClient(handler);
-            var request = new HttpRequestMessage(HttpMethod.Get, BaseUrl + serviceUrl);
+            var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
             if (sinceTime.HasValue)
             {
                 request.Headers.IfModifiedSince = sinceTime.Value;
@@ -88,21 +88,21 @@ namespace Vegvesen.Client
             }
 
             if (!response.IsSuccessStatusCode)
-                throw new WebException(string.Format("Error retrieving data for {0}, status code: {1}, reason: {2}", 
+                throw new WebException(string.Format("Error retrieving data from {0}, status code: {1}, reason: {2}",
                     serviceUrl, response.StatusCode, response.ReasonPhrase));
 
             return await CreateResultAsync<T>(response.Content, response.Content.Headers.LastModified);
         }
 
-        private async Task<Result<T>> CreateResultAsync<T>(HttpContent content, DateTimeOffset? lastModified) 
+        private async Task<Result<T>> CreateResultAsync<T>(HttpContent content, DateTimeOffset? lastModified)
             where T : class
         {
-            if (typeof (T) == typeof (string))
+            if (typeof(T) == typeof(string))
                 return new Result<string>(await content.ReadAsStringAsync(), lastModified) as Result<T>;
             else if (typeof(T) == typeof(Stream))
                 return new Result<Stream>(await content.ReadAsStreamAsync(), lastModified) as Result<T>;
 
-            throw new InvalidOperationException(string.Format("Unable to create result of type {0}", typeof (T).Name));
+            throw new InvalidOperationException(string.Format("Unable to create result of type {0}", typeof(T).Name));
         }
     }
 }
